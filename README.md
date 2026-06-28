@@ -67,4 +67,4 @@ kubectl delete application toxindex -n toxindex
 
 ## Support
 
-Contact [support@insilica.co](mailto:support@insilica.co) for questions or issues.
+Contact [info@insilica.co](mailto:info@insilica.co) for questions or issues.
