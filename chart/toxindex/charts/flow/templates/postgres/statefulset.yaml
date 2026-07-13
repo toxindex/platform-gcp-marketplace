@@ -1,0 +1,62 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flow-postgres
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "flow.labels" (dict "name" "flow-postgres" "component" "database" "release" $.Release.Name) | nindent 4 }}
+spec:
+  serviceName: flow-postgres
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "flow.selectorLabels" (dict "name" "flow-postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "flow.labels" (dict "name" "flow-postgres" "component" "database" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "flow-postgres") | quote }}
+          env:
+            - name: POSTGRES_DB
+              value: flow
+            - name: POSTGRES_USER
+              value: flow
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.passwordSecret }}
+                  key: password
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          {{- with .Values.postgres.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "flow"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.postgres.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage.size }}
+{{- end }}

@@ -1,0 +1,203 @@
+global:
+  namespace: ""
+  registry: us-central1-docker.pkg.dev/toxindex/tidx-shared-artifacts-gar
+  toolsRegistry: us-central1-docker.pkg.dev/toxindex/tidx-shared-toxjobs-dist-gar
+  license:
+    key: ""
+    secret: tidx-license
+    remoteSecret: ""
+    brokerUrl: https://license.toxindex.com
+    publicKey: "ww5JzVH/qt0u5gtFL7wAE2hvOHxvV+n137+7doof31Y="
+    registrySecret: tools-pull
+    datasetSecretPrefix: tidx-dataset
+  images:
+    license-agent:
+      tag: "1783726108-95ce6fd" # {"$imagepolicy": "flux-system:license-agent:tag"}
+      digest: sha256:3c7c572689f91511bcd4b95f75d2e9467f1f20fe3a1e6ba0dc261f16238b0fa7
+    toxjobs-manager:
+      tag: "1783726105-95ce6fd"
+      digest: sha256:981cea0a6dae01d63e071d1315e3658016faa04c11a9c8fccf650310e211cc7c
+    crawler-loader:
+      tag: "1783726105-95ce6fd"
+      digest: sha256:655dad8cbbd915f9d874872c6db62c2169411bc5b56eb959c162103da01555c8
+    crawler-search:
+      tag: "1783726109-95ce6fd"
+      digest: sha256:0ab0c06dc198c86fabae00246ec9c61873feff141faf0998fa72d15f9ad93458
+    crawler-embedder:
+      tag: "1782961737-4b1fb8b" # {"$imagepolicy": "flux-system:crawler-embedder:tag"}
+    crawler-resolver:
+      tag: "1783726109-95ce6fd"
+      digest: sha256:cd0bab70c6a743614c2cd8b3576f7caa6375f9ba785e295702c49d80249d5ee8
+    kiln-resolver:
+      tag: "1783726109-95ce6fd"
+      digest: sha256:3ecd37d1adec94fdec9f1486ce4fafb409e6967f525cb23c6709b4f634f5eba0
+    kiln-loader:
+      tag: "1783723368-c23917a" # {"$imagepolicy": "flux-system:kiln-loader:tag"}
+    toxjobs-rdkit:
+      tag: "1783726275-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-rdkit:tag"}
+    toxjobs-opera:
+      tag: "1783726241-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-opera:tag"}
+    toxjobs-httk:
+      tag: "1783726249-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-httk:tag"}
+    toxjobs-reactiont5:
+      tag: "1783726265-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-reactiont5:tag"}
+    toxjobs-mordred:
+      tag: "1783726248-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-mordred:tag"}
+    toxjobs-indigo:
+      tag: "1783726251-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-indigo:tag"}
+    toxjobs-e3fp:
+      tag: "1783726247-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-e3fp:tag"}
+    toxjobs-rdchiral:
+      tag: "1783726243-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-rdchiral:tag"}
+    toxjobs-admet-ai:
+      tag: "1783726253-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-admet-ai:tag"}
+    toxjobs-biotransformer:
+      tag: "1783726276-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-biotransformer:tag"}
+    toxjobs-metabognn:
+      tag: "1783726385-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-metabognn:tag"}
+    toxjobs-metapredictor:
+      tag: "1783726392-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-metapredictor:tag"}
+    toxjobs-vega:
+      tag: "1783726408-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-vega:tag"}
+    toxjobs-etoxpred:
+      tag: "1783726425-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-etoxpred:tag"}
+    toxjobs-exposome:
+      tag: "1783726511-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-exposome:tag"}
+    toxjobs-hobpre:
+      tag: "1783726555-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-hobpre:tag"}
+    toxjobs-pksmart:
+      tag: "1783726620-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-pksmart:tag"}
+    toxjobs-pmi:
+      tag: "1783726616-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-pmi:tag"}
+    toxjobs-soltrannet:
+      tag: "1783726634-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-soltrannet:tag"}
+    toxjobs-stoptox:
+      tag: "1783726665-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-stoptox:tag"}
+    toxjobs-thermo:
+      tag: "1783726762-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-thermo:tag"}
+    toxjobs-tox21:
+      tag: "1783726763-95ce6fd" # {"$imagepolicy": "flux-system:toxjobs-tox21:tag"}
+    flow-engine:
+      tag: "1783726109-95ce6fd"
+      digest: sha256:f1ac99ddf7eb614b110964160cd9188d75cb52e46e7ddfe6ad966fd193a14228
+    sage-agent:
+      tag: "1783726102-95ce6fd"
+      digest: sha256:be010749d6f9f5080610fb3a227ed3c1a96022f70d3f46d57bf0941cff80a378
+    sage-control-plane:
+      tag: "1783726185-95ce6fd"
+      digest: sha256:bd6c52b7ad1066dd60607cdce5e195d3d8eed0723e903be45772a06f234dddb6
+    sage-db:
+      tag: "1783726106-95ce6fd"
+      digest: sha256:37b0e7b05db942feedea95c64dceb563b93b24ea40399e47b9329564fdd0c853
+    crawler-postgres:
+      repository: pgvector/pgvector
+      tag: "pg17"
+    flow-postgres:
+      repository: postgres
+      tag: "18.4"
+    flow-db:
+      tag: "1783726104-95ce6fd"
+      digest: sha256:de73960499a9d2e4439352697ea479ab30b896ee1ff33cb7ac74ab0b713c1926
+    sage-postgres:
+      repository: postgres
+      tag: "18.4"
+    clickhouse:
+      repository: clickhouse/clickhouse-server
+      tag: "24.8"
+    oauth2-proxy:
+      repository: quay.io/oauth2-proxy/oauth2-proxy
+      tag: "v7.15.3"
+    otel-collector:
+      repository: otel/opentelemetry-collector-contrib
+      tag: "0.119.0"
+    kube-state-metrics:
+      repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+      tag: "v2.14.0"
+    victoria-metrics:
+      repository: victoriametrics/victoria-metrics
+      tag: "v1.111.0"
+    vmalert:
+      repository: victoriametrics/vmalert
+      tag: "v1.111.0"
+    alertmanager:
+      repository: prom/alertmanager
+      tag: "v0.28.0"
+  datasets:
+    crawler:
+      bucket: tidx-shared-crawler-dist-gcs
+      version: "2026-06-17"
+      groups: "epa"
+    kiln:
+      bucket: tidx-shared-kiln-dist-gcs
+      version: "2026-06-10"
+  observability:
+    endpoint: http://otel-collector:4317
+  identityMode: open
+  gpu:
+    runtimeClassName: ""
+    nodeSelector: {}
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+kiln:
+  enabled: true
+toxjobs:
+  enabled: true
+flow:
+  enabled: true
+sage:
+  enabled: true
+gateway:
+  enabled: true
+observability:
+  enabled: true
+  serviceAccount:
+    gcpServiceAccount: ""
+  credentialsSecret: ""
+  credentialsRemoteSecret: ""
+  clusterName: ""
+  location: ""
+  resourceDetectors:
+    - env
+    - system
+  exporters:
+    debug: {}
+    prometheusremotewrite:
+      endpoint: http://victoria-metrics:8428/api/v1/write
+      add_metric_suffixes: false
+  pipelines:
+    traces:
+      - debug
+    metrics:
+      - prometheusremotewrite
+    logs:
+      - debug
+  extraScrapeConfigs: []
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  agentResources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  backend:
+    enabled: true
+    retentionPeriod: 30d
+    storage:
+      size: 10Gi
+      class: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+  licensedPartOfRegex: "toxjobs|flow"
+  loaderPartOfRegex: "kiln|crawler"
+  excludeNamespaceRegex: "kube-.*|gke-managed-.*|gmp-.*"

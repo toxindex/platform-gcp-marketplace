@@ -1,0 +1,72 @@
+{{- if .Values.clickhouse.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kiln-clickhouse
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name) | nindent 4 }}
+spec:
+  serviceName: kiln-clickhouse
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      containers:
+        - name: clickhouse
+          image: {{ include "toxindex.image" (dict "root" $ "name" "clickhouse") | quote }}
+          env:
+            - name: CLICKHOUSE_LOADER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.clickhouse.loaderPasswordSecret }}
+                  key: password
+          ports:
+            - name: native
+              containerPort: 9000
+            - name: http
+              containerPort: 8123
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d
+            - name: users
+              mountPath: /etc/clickhouse-server/users.d
+          {{- with .Values.clickhouse.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: kiln-clickhouse-config
+        - name: users
+          configMap:
+            name: kiln-clickhouse-users
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.clickhouse.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.clickhouse.storage.size }}
+{{- end }}

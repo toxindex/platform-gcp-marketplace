@@ -1,70 +1,21 @@
-# ToxIndex on Google Cloud Marketplace
+# ToxIndex for Google Cloud Marketplace
 
-ToxIndex is a computational toxicology platform by [Insilica](https://insilica.co). This repository contains deployment assets for installing ToxIndex from Google Cloud Marketplace.
+This repository contains the deployment configuration and user guide for
+[ToxIndex](https://insilica.co) on Google Cloud Marketplace.
 
-## Prerequisites
+- [User guide](marketplace/docs/user-guide.md)
+- [Helm chart](chart/toxindex)
 
-- A GKE cluster (1.27+) with at least 2 nodes of `e2-standard-4` or equivalent
-- `kubectl` configured to access your cluster
-- The [Application CRD](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/master/crd/app-crd.yaml) installed on your cluster
-- [mpdev](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/master/docs/mpdev-references.md) (Marketplace development tool)
+## About this repository
 
-## Quick install with Google Cloud Marketplace
+This repository is a generated mirror of a private source repository. Its
+contents are produced by an automated, reviewed export. Issues and feature
+requests are welcome here; pull requests cannot be merged directly because
+every file is overwritten on the next release export. If you would like to
+contribute a change, open an issue describing it instead.
 
-Visit the [ToxIndex listing](https://console.cloud.google.com/marketplace/product/insilica-public/toxindex) on Google Cloud Marketplace and click **Configure**.
+## License
 
-## Command-line deployment
-
-### Install the Application CRD
-
-```shell
-kubectl apply -f "https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/crd/app-crd.yaml"
-```
-
-### Create a namespace
-
-```shell
-kubectl create namespace toxindex
-```
-
-### Install ToxIndex
-
-```shell
-mpdev install \
-  --deployer=us-docker.pkg.dev/insilica-public/toxindex/deployer:0.4 \
-  --parameters='{"name": "toxindex", "namespace": "toxindex"}'
-```
-
-### Optional parameters
-
-| Parameter | Description |
-|---|---|
-| `marketplace.licenseKey` | License key issued by Insilica. The app runs without one; licensed datasets and tools become available after a valid key is applied. |
-| `sage.agent.serviceAccount.gcpServiceAccount` | Email of a GCP service account with `roles/aiplatform.user`. Enables the Sage AI assistant via Workload Identity. |
-| `sage.agent.vertex.project` | GCP project ID for Vertex AI requests. Required if a service account is set. |
-| `sage.agent.vertex.region` | Region for Vertex AI requests (e.g. `us-central1`). |
-
-Example with all options:
-
-```shell
-mpdev install \
-  --deployer=us-docker.pkg.dev/insilica-public/toxindex/deployer:0.4 \
-  --parameters='{
-    "name": "toxindex",
-    "namespace": "toxindex",
-    "marketplace.licenseKey": "your-license-key",
-    "sage.agent.serviceAccount.gcpServiceAccount": "sage@your-project.iam.gserviceaccount.com",
-    "sage.agent.vertex.project": "your-project",
-    "sage.agent.vertex.region": "us-central1"
-  }'
-```
-
-### Uninstall
-
-```shell
-kubectl delete application toxindex -n toxindex
-```
-
-## Support
-
-Contact [info@insilica.co](mailto:info@insilica.co) for questions or issues.
+The contents of this repository are licensed under the
+[Apache License 2.0](LICENSE). ToxIndex itself is commercial software;
+container images and licensed datasets are governed by the Insilica EULA.

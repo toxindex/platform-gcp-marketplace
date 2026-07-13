@@ -1,0 +1,82 @@
+{{- if .Values.oidc.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-alpha-config
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
+data:
+  alpha.yaml: |
+    server:
+      bindAddress: "0.0.0.0:4180"
+    upstreamConfig:
+      upstreams:
+      {{- range $i, $r := .Values.routes }}
+        - id: route-{{ $i }}
+          path: {{ $r.path }}
+          uri: {{ trimSuffix "/" $r.upstream }}
+      {{- end }}
+    providers:
+      - id: oidc
+        provider: oidc
+        clientID: {{ required "gateway: oidc.clientId is required when oidc.enabled" .Values.oidc.clientId | quote }}
+        clientSecretFile: /var/run/secrets/oidc/client-secret
+        {{- with .Values.oidc.scope }}
+        scope: {{ . | quote }}
+        {{- end }}
+        oidcConfig:
+          issuerURL: {{ required "gateway: oidc.issuerUrl is required when oidc.enabled" .Values.oidc.issuerUrl | quote }}
+          skipDiscovery: false
+        {{- $custom := list }}
+        {{- range (list .Values.oidc.claims.group .Values.oidc.claims.user .Values.oidc.claims.groupName .Values.oidc.claims.userName) }}
+        {{- if . }}{{ $custom = append $custom . }}{{- end }}
+        {{- end }}
+        {{- if $custom }}
+        additionalClaims:
+          {{- range $custom }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- end }}
+    injectRequestHeaders:
+      - name: X-ToxIndex-Group
+        values:
+          {{- with .Values.oidc.claims.group }}
+          - claimSource:
+              claim: {{ . | quote }}
+          {{- else }}
+          - secretSource:
+              value: ""
+          {{- end }}
+      - name: X-ToxIndex-User
+        values:
+          {{- with .Values.oidc.claims.user }}
+          - claimSource:
+              claim: {{ . | quote }}
+          {{- else }}
+          - secretSource:
+              value: ""
+          {{- end }}
+      - name: X-ToxIndex-Group-Name
+        values:
+          {{- with .Values.oidc.claims.groupName }}
+          - claimSource:
+              claim: {{ . | quote }}
+          {{- else }}
+          - secretSource:
+              value: ""
+          {{- end }}
+      - name: X-ToxIndex-User-Name
+        values:
+          {{- with .Values.oidc.claims.userName }}
+          - claimSource:
+              claim: {{ . | quote }}
+          {{- else }}
+          - secretSource:
+              value: ""
+          {{- end }}
+      - name: X-ToxIndex-Issuer
+        values:
+          - secretSource:
+              value: {{ .Values.oidc.issuerUrl | b64enc | quote }}
+{{- end }}

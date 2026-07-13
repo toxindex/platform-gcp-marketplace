@@ -1,0 +1,20 @@
+{{- if .Values.manager.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: toxjobs-manager
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxjobs.labels" (dict "name" "toxjobs-manager" "component" "manager" "release" $.Release.Name) | nindent 4 }}
+  {{- if .Values.manager.tailscale.expose }}
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: {{ .Values.manager.tailscale.hostname }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "toxjobs.selectorLabels" (dict "name" "toxjobs-manager") | nindent 4 }}
+  ports:
+    - port: 8080
+      targetPort: 8080
+{{- end }}

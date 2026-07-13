@@ -1,0 +1,3 @@
+{{- if not (or .Values.manager.enabled .Values.remoteManager.enabled) }}
+{{- fail "toxjobs: manager endpoint is unavailable — enable toxjobs.manager.enabled (local) or toxjobs.remoteManager.enabled (remote)" }}
+{{- end }}

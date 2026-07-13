@@ -1,0 +1,109 @@
+{{- if .Values.observability.enabled }}
+{{- $procs := list "memory_limiter" "k8sattributes" "resourcedetection" -}}
+{{- if or .Values.observability.clusterName .Values.observability.location -}}
+{{- $procs = append $procs "resource" -}}
+{{- end -}}
+{{- $procs = append $procs "batch" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: observability
+    app.kubernetes.io/component: collector
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      k8sobjects:
+        auth_type: serviceAccount
+        objects:
+          - name: events
+            mode: watch
+            group: events.k8s.io
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: kube-state-metrics
+              scrape_interval: 30s
+              static_configs:
+                - targets: [kube-state-metrics:8080]
+            - job_name: flux
+              scrape_interval: 30s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [flux-system]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  action: keep
+                  regex: http-prom
+            {{- with .Values.observability.extraScrapeConfigs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.node.name
+            - k8s.deployment.name
+      resourcedetection:
+        detectors: [{{ join ", " .Values.observability.resourceDetectors }}]
+        timeout: 5s
+      {{- if or .Values.observability.clusterName .Values.observability.location }}
+      resource:
+        attributes:
+          {{- with .Values.observability.clusterName }}
+          - key: k8s.cluster.name
+            value: {{ . | quote }}
+            action: upsert
+          {{- end }}
+          {{- with .Values.observability.location }}
+          - key: cloud.region
+            value: {{ . | quote }}
+            action: upsert
+          {{- end }}
+      {{- end }}
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      {{- toYaml .Values.observability.exporters | nindent 6 }}
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [{{ join ", " $procs }}]
+          exporters: [{{ join ", " .Values.observability.pipelines.traces }}]
+        metrics:
+          receivers: [otlp, prometheus]
+          processors: [{{ join ", " $procs }}]
+          exporters: [{{ join ", " .Values.observability.pipelines.metrics }}]
+        logs:
+          receivers: [otlp, k8sobjects]
+          processors: [{{ join ", " $procs }}]
+          exporters: [{{ join ", " .Values.observability.pipelines.logs }}]
+{{- end }}

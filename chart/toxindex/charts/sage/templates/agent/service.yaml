@@ -1,0 +1,15 @@
+{{- if .Values.agent.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sage-agent
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sage.labels" (dict "name" "sage-agent" "component" "agent" "release" $.Release.Name) | nindent 4 }}
+spec:
+  selector:
+    {{- include "sage.selectorLabels" (dict "name" "sage-agent") | nindent 4 }}
+  ports:
+    - port: 8080
+      targetPort: 8080
+{{- end }}

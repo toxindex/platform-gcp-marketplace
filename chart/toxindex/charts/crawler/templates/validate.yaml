@@ -1,0 +1,3 @@
+{{- if not (or .Values.search.enabled .Values.remoteSearch.enabled) }}
+{{- fail "crawler: search endpoint is unavailable — enable crawler.search.enabled (local) or crawler.remoteSearch.enabled (remote)" }}
+{{- end }}

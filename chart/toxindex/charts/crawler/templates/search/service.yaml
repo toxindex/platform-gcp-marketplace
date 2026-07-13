@@ -1,0 +1,20 @@
+{{- if .Values.search.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: crawler-search
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "crawler.labels" (dict "name" "crawler-search" "component" "frontend" "release" $.Release.Name) | nindent 4 }}
+  {{- if .Values.search.tailscale.expose }}
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: {{ .Values.search.tailscale.hostname }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "crawler.selectorLabels" (dict "name" "crawler-search") | nindent 4 }}
+  ports:
+    - port: 80
+      targetPort: 8080
+{{- end }}

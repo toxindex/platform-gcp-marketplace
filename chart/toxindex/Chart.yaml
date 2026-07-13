@@ -1,0 +1,24 @@
+apiVersion: v2
+name: toxindex
+version: 0.7.0
+description: ToxIndex platform
+type: application
+dependencies:
+  - name: kiln
+    version: 0.3.0
+    condition: kiln.enabled
+  - name: crawler
+    version: 0.1.0
+    condition: crawler.enabled
+  - name: toxjobs
+    version: 0.1.0
+    condition: toxjobs.enabled
+  - name: flow
+    version: 0.1.0
+    condition: flow.enabled
+  - name: sage
+    version: 0.1.0
+    condition: sage.enabled
+  - name: gateway
+    version: 0.1.0
+    condition: gateway.enabled

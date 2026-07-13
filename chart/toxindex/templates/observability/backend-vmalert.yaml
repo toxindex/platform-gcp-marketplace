@@ -1,0 +1,197 @@
+{{- if and .Values.observability.enabled .Values.observability.backend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vmalert-rules
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: vmalert
+    app.kubernetes.io/part-of: observability
+    app.kubernetes.io/component: alerting
+data:
+  rules.yaml: |
+    groups:
+      - name: platform-workloads
+        rules:
+          - alert: LicensedImagePullFailing
+            expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull"} * on (namespace, pod) group_left() kube_pod_labels{label_app_kubernetes_io_part_of=~"{{ .Values.observability.licensedPartOfRegex }}"}) > 0
+            for: 15m
+            labels:
+              severity: info
+              category: license
+            annotations:
+              summary: Licensed artifact is not pulling
+              description: A rig or tool image cannot be pulled. This is most likely a missing or unsynced pull credential for a licensed artifact, not a platform outage.
+          - alert: PlatformImagePullFailing
+            expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} unless on (namespace, pod) kube_pod_labels{label_app_kubernetes_io_part_of=~"{{ .Values.observability.licensedPartOfRegex }}"}) > 0
+            for: 5m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Platform image is not pulling
+              description: A core platform container cannot pull its image. This blocks a rollout and needs attention.
+          - alert: PodCrashLooping
+            expr: max by (namespace, pod) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"}) > 0
+            for: 10m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Pod is crash looping
+              description: A container has been restarting repeatedly for over 10 minutes.
+          - alert: PodPendingTooLong
+            expr: kube_pod_status_phase{phase="Pending", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1
+            for: 15m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: Pod stuck pending
+              description: A pod has been unschedulable for over 15 minutes, often resource or GPU-node exhaustion.
+          - alert: ContainerOOMKilled
+            expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1
+            for: 1m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: Container OOMKilled
+              description: A container was killed for exceeding its memory limit.
+          - alert: PersistentVolumeFillingUp
+            expr: max by (k8s_namespace_name, k8s_persistentvolumeclaim_name) (k8s_volume_used{k8s_namespace_name!~"{{ .Values.observability.excludeNamespaceRegex }}"} / k8s_volume_capacity) > 0.85
+            for: 15m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: PersistentVolume filling up
+              description: A PVC-backed volume is over 85% full. A full datastore volume takes the owning service down.
+          - alert: DataLoaderJobFailed
+            expr: (kube_job_failed{condition="true"} == 1) * on (namespace, job_name) group_left() kube_job_labels{label_app_kubernetes_io_part_of=~"{{ .Values.observability.loaderPartOfRegex }}"}
+            for: 5m
+            labels:
+              severity: warning
+              category: data
+            annotations:
+              summary: Data loader Job failed
+              description: A dataset loader Job failed. Check the reader credential and the pinned dataset version.
+          - alert: JobFailed
+            expr: (kube_job_failed{condition="true", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1) unless on (namespace, job_name) kube_job_labels{label_app_kubernetes_io_part_of=~"{{ .Values.observability.loaderPartOfRegex }}"}
+            for: 5m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: Job failed
+              description: A Kubernetes Job reported a failed completion.
+      - name: platform-control-plane
+        rules:
+          - alert: RolloutStalled
+            expr: kube_deployment_status_condition{type="Progressing", status="false", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1
+            for: 10m
+            labels:
+              severity: critical
+              category: delivery
+            annotations:
+              summary: Deployment rollout is stalled
+              description: A Deployment has not made progress for over 10 minutes. The new pod likely fails readiness — the old pod is still serving but the rollout is stuck until the image is fixed or the commit reverted.
+          - alert: FluxReconcileFailing
+            expr: gotk_reconcile_condition{type="Ready", status="False"} == 1
+            for: 15m
+            labels:
+              severity: warning
+              category: delivery
+            annotations:
+              summary: Flux reconciliation failing
+              description: A Flux Kustomization or HelmRelease has been not-Ready for over 15 minutes; new state is not being delivered.
+          - alert: KubeStateMetricsDown
+            expr: up{job="kube-state-metrics"} == 0
+            for: 10m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: kube-state-metrics is down
+              description: Workload-state metrics are unavailable, so platform-error alerts are blind.
+          - alert: FluxMetricsDown
+            expr: up{job="flux"} == 0
+            for: 15m
+            labels:
+              severity: warning
+              category: delivery
+            annotations:
+              summary: Flux metrics unavailable
+              description: The collector cannot scrape Flux controllers; delivery health is unobservable.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmalert
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: vmalert
+    app.kubernetes.io/part-of: observability
+    app.kubernetes.io/component: alerting
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmalert
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmalert
+        app.kubernetes.io/part-of: observability
+        app.kubernetes.io/component: alerting
+    spec:
+      containers:
+        - name: vmalert
+          image: {{ include "toxindex.image" (dict "root" $ "name" "vmalert") | quote }}
+          args:
+            - -datasource.url=http://victoria-metrics:8428
+            - -remoteWrite.url=http://victoria-metrics:8428
+            - -notifier.url=http://alertmanager:9093
+            - -rule=/etc/alerts/rules.yaml
+            - -evaluationInterval=30s
+            - -httpListenAddr=:8880
+          ports:
+            - containerPort: 8880
+              name: http
+          volumeMounts:
+            - name: rules
+              mountPath: /etc/alerts
+              readOnly: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8880
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8880
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: rules
+          configMap:
+            name: vmalert-rules
+{{- end }}

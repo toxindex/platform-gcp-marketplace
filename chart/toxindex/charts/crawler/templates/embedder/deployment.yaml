@@ -1,0 +1,57 @@
+{{- if .Values.embedder.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-embedder
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "crawler.labels" (dict "name" "crawler-embedder" "component" "embedder" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      {{- include "crawler.selectorLabels" (dict "name" "crawler-embedder") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "crawler.labels" (dict "name" "crawler-embedder" "component" "embedder" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      {{- include "toxindex.gpuScheduling" . | trim | nindent 6 }}
+      containers:
+        - name: embedder
+          image: {{ include "toxindex.image" (dict "root" $ "name" "crawler-embedder") | quote }}
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "crawler-embedder") | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          {{- with .Values.embedder.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+{{- end }}

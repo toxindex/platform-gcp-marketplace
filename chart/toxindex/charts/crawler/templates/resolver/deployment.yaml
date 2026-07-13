@@ -1,0 +1,52 @@
+{{- if .Values.resolver.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-resolver
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "crawler.labels" (dict "name" "crawler-resolver" "component" "frontend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "crawler.selectorLabels" (dict "name" "crawler-resolver") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "crawler.labels" (dict "name" "crawler-resolver" "component" "frontend" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      containers:
+        - name: resolver
+          image: {{ include "toxindex.image" (dict "root" $ "name" "crawler-resolver") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "crawler.dbEnv" (dict "root" $ "var" "DATABASE_URL") | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+{{- end }}

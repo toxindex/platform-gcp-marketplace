@@ -1,0 +1,3 @@
+{{- if not (or .Values.engine.enabled .Values.remoteFlow.enabled) }}
+{{- fail "flow: engine endpoint is unavailable — enable flow.engine.enabled (local) or flow.remoteFlow.enabled (remote)" }}
+{{- end }}

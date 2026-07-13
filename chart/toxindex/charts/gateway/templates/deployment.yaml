@@ -1,0 +1,83 @@
+{{- if .Values.oidc.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" (dict "name" "gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      containers:
+        - name: gateway
+          image: {{ include "toxindex.image" (dict "root" $ "name" "oauth2-proxy") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          args:
+            - --alpha-config=/etc/oauth2-proxy/alpha.yaml
+            - --cookie-secret=$(COOKIE_SECRET)
+            - --email-domain={{ .Values.oidc.emailDomains }}
+            - --skip-provider-button=true
+            - --skip-auth-route=^/(mcp|v1|a2a|oauth|\.well-known)(/|$)
+            {{- with .Values.oidc.redirectUrl }}
+            - --redirect-url={{ . }}
+            {{- end }}
+            {{- with .Values.oidc.issuerUrl }}
+            - --whitelist-domain={{ (urlParse .).host }}
+            {{- end }}
+          env:
+            - name: COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oidc.cookieSecret }}
+                  key: cookie-secret
+          volumeMounts:
+            - name: alpha-config
+              mountPath: /etc/oauth2-proxy
+              readOnly: true
+            - name: oidc-secret
+              mountPath: /var/run/secrets/oidc
+              readOnly: true
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 4180
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: alpha-config
+          configMap:
+            name: gateway-alpha-config
+        - name: oidc-secret
+          secret:
+            secretName: {{ .Values.oidc.secretName }}
+            items:
+              - key: client-secret
+                path: client-secret
+{{- end }}
