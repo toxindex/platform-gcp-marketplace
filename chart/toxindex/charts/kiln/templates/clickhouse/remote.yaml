@@ -1,0 +1,3 @@
+{{- if and (not .Values.clickhouse.enabled) .Values.remoteClickhouse.enabled }}
+{{- include "toxindex.remoteService" (dict "name" "kiln-clickhouse" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteClickhouse.tailnetFqdn "labels" (include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name))) }}
+{{- end }}

@@ -1,0 +1,3 @@
+{{- if and (not .Values.search.enabled) .Values.remoteSearch.enabled }}
+{{- include "toxindex.remoteService" (dict "name" "crawler-search" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteSearch.tailnetFqdn "labels" (include "crawler.labels" (dict "name" "crawler-search" "component" "frontend" "release" $.Release.Name))) }}
+{{- end }}

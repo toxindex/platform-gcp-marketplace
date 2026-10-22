@@ -1,0 +1,75 @@
+{{- $dataset := .Values.global.datasets.crawler }}
+{{- if and .Values.loader.enabled $dataset.version }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-loader
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "crawler.labels" (dict "name" "crawler-loader" "component" "data-loader" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "crawler.selectorLabels" (dict "name" "crawler-loader") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "crawler.labels" (dict "name" "crawler-loader" "component" "data-loader" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "crawler-postgres") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - until pg_isready -h crawler-postgres -p 5432 -U crawler; do echo "waiting for postgres"; sleep 2; done
+      containers:
+        - name: loader
+          image: {{ include "toxindex.image" (dict "root" $ "name" "crawler-loader") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            - name: DATASET_BUCKET
+              value: {{ $dataset.bucket | quote }}
+            - name: DATASET_VERSION
+              value: {{ $dataset.version | quote }}
+            - name: SOURCE_GROUPS
+              value: {{ $dataset.groups | quote }}
+            {{- include "crawler.dbEnv" (dict "root" $ "var" "TARGET_DATABASE_URL") | nindent 12 }}
+            - name: GCS_TOKEN_FILE
+              value: /etc/dataset/token
+            {{- with .Values.loader.maxBlocks }}
+            - name: DATASET_MAX_BLOCKS
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: dataset-token
+              mountPath: /etc/dataset
+              readOnly: true
+      volumes:
+        - name: dataset-token
+          secret:
+            secretName: {{ include "toxindex.license.datasetSecret" (dict "root" $ "name" "crawler") }}
+            optional: true
+{{- end }}

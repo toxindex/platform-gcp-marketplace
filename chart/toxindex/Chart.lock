@@ -1,0 +1,21 @@
+dependencies:
+- name: kiln
+  repository: ""
+  version: 0.3.0
+- name: crawler
+  repository: ""
+  version: 0.1.0
+- name: toxjobs
+  repository: ""
+  version: 0.1.0
+- name: flow
+  repository: ""
+  version: 0.1.0
+- name: sage
+  repository: ""
+  version: 0.1.0
+- name: gateway
+  repository: ""
+  version: 0.1.0
+digest: sha256:023080add7d3ab617b1c920254b52fa8c43980bed929cd7ba4bf5c8c324ee142
+generated: "2026-06-22T12:06:39.835839-04:00"

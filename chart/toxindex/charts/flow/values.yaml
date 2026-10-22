@@ -1,0 +1,41 @@
+networkPolicy:
+  enabled: true
+
+postgres:
+  enabled: true
+  host: flow-postgres
+  passwordSecret: flow-postgres-password
+  passwordRemoteSecret: ""
+  appPasswordSecret: flow-app-password
+  appPasswordRemoteSecret: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  storage:
+    class: ""
+    size: 10Gi
+
+engine:
+  enabled: true
+  serviceAccount:
+    gcpServiceAccount: ""
+  vertex:
+    project:
+    region: global
+    serviceTier: standard
+    credentialsSecret: ""
+    credentialsRemoteSecret: ""
+  tailscale:
+    expose: false
+    hostname: tidx-flow-engine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+remoteFlow:
+  enabled: false
+  tailnetFqdn: ""

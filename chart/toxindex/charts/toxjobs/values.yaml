@@ -1,0 +1,104 @@
+networkPolicy:
+  enabled: true
+
+manager:
+  enabled: true
+  rigPort: 8080
+  reconcileInterval: 30s
+  tailscale:
+    expose: false
+    hostname: tidx-toxjobs-manager
+  rigAllowlist: []
+  gpuRigs:
+    - toxjobs-reactiont5
+  rigEnv:
+    WEB_CONCURRENCY: "1"
+    RIG_THREADS: "4"
+    RIG_SERIALIZE: "1"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  startupProbe:
+    failureThreshold: 30
+    periodSeconds: 10
+  gpu:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 8Gi
+        nvidia.com/gpu: 1
+    startupProbe:
+      failureThreshold: 60
+      periodSeconds: 10
+  allowIngressNamespaces:
+    - toxjobs
+    - sage
+    - flow
+  extraAllowIngressNamespaces: []
+  rigOverrides:
+    toxjobs-opera:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 4Gi
+        limits:
+          cpu: "2"
+          memory: 8Gi
+    toxjobs-admet-ai:
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+        limits:
+          cpu: "2"
+          memory: 8Gi
+    toxjobs-biotransformer:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+    toxjobs-metabognn:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+    toxjobs-metapredictor:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+    toxjobs-vega:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+  managerResources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+remoteManager:
+  enabled: false
+  tailnetFqdn: ""

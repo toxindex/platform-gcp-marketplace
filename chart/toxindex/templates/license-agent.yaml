@@ -1,0 +1,130 @@
+{{- if include "toxindex.license.enabled" (dict "root" .) }}
+{{- $ns := .Values.global.namespace | default .Release.Namespace }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: license-agent
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: license-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: toxindex
+    app.kubernetes.io/component: license
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: license-agent
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: license-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: toxindex
+    app.kubernetes.io/component: license
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, watch, create, update, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: license-agent
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: license-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: toxindex
+    app.kubernetes.io/component: license
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: license-agent
+subjects:
+  - kind: ServiceAccount
+    name: license-agent
+    namespace: {{ $ns }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: license-agent
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: license-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: toxindex
+    app.kubernetes.io/component: license
+data:
+  config.json: |
+    {{- $datasets := dict }}
+    {{- range $name, $ds := .Values.global.datasets }}
+    {{- $_ := set $datasets $name (include "toxindex.license.datasetSecret" (dict "root" $ "name" $name)) }}
+    {{- end }}
+    {{- $config := dict "registrySecret" (include "toxindex.license.registrySecret" (dict "root" .)) "datasets" $datasets }}
+    {{- toJson $config | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: license-agent
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: license-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: toxindex
+    app.kubernetes.io/component: license
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: license-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: license-agent
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: toxindex
+        app.kubernetes.io/component: license
+    spec:
+      serviceAccountName: license-agent
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      containers:
+        - name: license-agent
+          image: {{ include "toxindex.image" (dict "root" $ "name" "license-agent") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            - name: BROKER_URL
+              value: {{ .Values.global.license.brokerUrl | quote }}
+            {{- with .Values.global.license.publicKey }}
+            - name: LICENSE_PUBLIC_KEY
+              value: {{ . | quote }}
+            {{- end }}
+            - name: CONFIG_FILE
+              value: /etc/license-agent/config.json
+            - name: LICENSE_FILE
+              value: /etc/license-agent/license/license
+          volumeMounts:
+            - name: config
+              mountPath: /etc/license-agent/config.json
+              subPath: config.json
+              readOnly: true
+            - name: license
+              mountPath: /etc/license-agent/license
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: license-agent
+        - name: license
+          secret:
+            secretName: {{ include "toxindex.license.secret" (dict "root" .) }}
+{{- end }}

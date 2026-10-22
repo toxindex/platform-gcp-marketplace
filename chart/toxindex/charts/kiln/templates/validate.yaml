@@ -1,0 +1,3 @@
+{{- if not (or .Values.clickhouse.enabled .Values.remoteClickhouse.enabled) }}
+{{- fail "kiln: clickhouse endpoint is unavailable — enable kiln.clickhouse.enabled (local) or kiln.remoteClickhouse.enabled (remote)" }}
+{{- end }}

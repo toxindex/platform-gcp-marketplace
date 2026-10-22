@@ -1,0 +1,68 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: toxjobs-default-deny-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxjobs.labels" (dict "name" "toxjobs-default-deny-ingress" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+{{- if .Values.manager.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: toxjobs-allow-tool-server-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxjobs.labels" (dict "name" "toxjobs-allow-tool-server-ingress" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: tool-server
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        {{- range concat .Values.manager.allowIngressNamespaces .Values.manager.extraAllowIngressNamespaces }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: {{ . }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.manager.rigPort }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: toxjobs-allow-manager-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxjobs.labels" (dict "name" "toxjobs-allow-manager-ingress" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        {{- range concat .Values.manager.allowIngressNamespaces .Values.manager.extraAllowIngressNamespaces }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: {{ . }}
+        {{- end }}
+        {{- if .Values.manager.tailscale.expose }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: 8080
+{{- end }}
+{{- end }}

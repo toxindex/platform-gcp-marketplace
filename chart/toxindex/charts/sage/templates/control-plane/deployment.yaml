@@ -1,0 +1,102 @@
+{{- if .Values.controlPlane.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sage-control-plane
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sage.labels" (dict "name" "sage-control-plane" "component" "frontend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      {{- include "sage.selectorLabels" (dict "name" "sage-control-plane") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sage.labels" (dict "name" "sage-control-plane" "component" "frontend" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      serviceAccountName: sage-control-plane
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "sage-postgres") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              elapsed=0
+              until pg_isready -h {{ .Values.postgres.host }} -p 5432 -U sage; do
+                elapsed=$((elapsed + 2))
+                if [ "$elapsed" -ge 120 ]; then
+                  echo "timed out waiting for postgres" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+        - name: migrate
+          image: {{ include "toxindex.image" (dict "root" $ "name" "sage-db") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "sage.migrateDbEnv" (dict "root" $) | nindent 12 }}
+      containers:
+        - name: sage-control-plane
+          image: {{ include "toxindex.image" (dict "root" $ "name" "sage-control-plane") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "sage-control-plane") | nindent 12 }}
+            - name: SAGE_AGENT_URL
+              value: {{ .Values.controlPlane.agentUrl | quote }}
+            - name: CRAWLER_SEARCH_URL
+              value: {{ include "toxindex.upstream.crawlerSearch" . | quote }}
+            - name: KILN_CLICKHOUSE_URL
+              value: {{ include "toxindex.upstream.kilnClickhouse" . | quote }}
+            - name: KILN_RESOLVER_URL
+              value: {{ include "toxindex.upstream.kilnResolver" . | quote }}
+            - name: CRAWLER_RESOLVER_URL
+              value: {{ include "toxindex.upstream.crawlerResolver" . | quote }}
+            - name: FLOW_ENGINE_URL
+              value: {{ include "toxindex.upstream.flowEngine" . | quote }}
+            - name: TOXJOBS_URL
+              value: {{ include "toxindex.upstream.toxjobs" . | quote }}
+            - name: IDENTITY_MODE
+              value: {{ .Values.global.identityMode | quote }}
+            {{- include "sage.dbEnv" (dict "root" $) | nindent 12 }}
+            {{- include "sage.fileStoreEnv" (dict "root" $) | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: {{ .Values.controlPlane.resources.requests.cpu | quote }}
+              memory: {{ .Values.controlPlane.resources.requests.memory | quote }}
+            limits:
+              memory: {{ .Values.controlPlane.resources.limits.memory | quote }}
+{{- end }}

@@ -1,0 +1,3 @@
+{{- if and (not .Values.engine.enabled) .Values.remoteFlow.enabled }}
+{{- include "toxindex.remoteService" (dict "name" "flow-engine" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteFlow.tailnetFqdn "labels" (include "flow.labels" (dict "name" "flow-engine" "component" "backend" "release" $.Release.Name))) }}
+{{- end }}

@@ -1,0 +1,87 @@
+{{- if and .Values.observability.enabled .Values.observability.backend.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: victoria-metrics
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: victoria-metrics
+    app.kubernetes.io/part-of: observability
+    app.kubernetes.io/component: database
+spec:
+  serviceName: victoria-metrics
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: victoria-metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: victoria-metrics
+        app.kubernetes.io/part-of: observability
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+        - name: victoria-metrics
+          image: {{ include "toxindex.image" (dict "root" $ "name" "victoria-metrics") | quote }}
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod={{ .Values.observability.backend.retentionPeriod }}
+            - -httpListenAddr=:8428
+          ports:
+            - containerPort: 8428
+              name: http
+          volumeMounts:
+            - name: storage
+              mountPath: /storage
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8428
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8428
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          {{- with .Values.observability.backend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+        labels:
+          app.kubernetes.io/name: victoria-metrics
+          app.kubernetes.io/part-of: observability
+          app.kubernetes.io/component: database
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.observability.backend.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.observability.backend.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-metrics
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: victoria-metrics
+    app.kubernetes.io/part-of: observability
+    app.kubernetes.io/component: database
+spec:
+  selector:
+    app.kubernetes.io/name: victoria-metrics
+  ports:
+    - name: http
+      port: 8428
+      targetPort: 8428
+{{- end }}

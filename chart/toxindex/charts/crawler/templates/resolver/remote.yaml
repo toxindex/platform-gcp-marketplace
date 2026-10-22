@@ -1,0 +1,3 @@
+{{- if and (not .Values.resolver.enabled) .Values.remoteResolver.enabled }}
+{{- include "toxindex.remoteService" (dict "name" "crawler-resolver" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteResolver.tailnetFqdn "labels" (include "crawler.labels" (dict "name" "crawler-resolver" "component" "frontend" "release" $.Release.Name))) }}
+{{- end }}

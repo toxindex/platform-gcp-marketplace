@@ -1,0 +1,32 @@
+{{- if .Values.clickhouse.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiln-clickhouse-users
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-clickhouse-users" "component" "database" "release" $.Release.Name) | nindent 4 }}
+data:
+  readonly.xml: |
+    <clickhouse>
+        <profiles>
+            <readonly>
+                <output_format_json_quote_64bit_integers>0</output_format_json_quote_64bit_integers>
+                <readonly>1</readonly>
+            </readonly>
+        </profiles>
+        <users>
+            <default>
+                <profile>readonly</profile>
+            </default>
+            <loader>
+                <password from_env="CLICKHOUSE_LOADER_PASSWORD"/>
+                <profile>default</profile>
+                <networks>
+                    <ip>::/0</ip>
+                </networks>
+                <quota>default</quota>
+            </loader>
+        </users>
+    </clickhouse>
+{{- end }}

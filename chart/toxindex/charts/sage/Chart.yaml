@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sage
+version: 0.1.0
+description: Sage agent and control-plane chat UI
+type: application
