@@ -1,5 +1,0 @@
-apiVersion: v2
-name: gateway
-version: 0.1.0
-description: Central OIDC auth proxy and path router for the serving layer
-type: application

@@ -1,9 +1,0 @@
-{{- if .Values.ssdStorage.enabled }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: {{ required "kiln: clickhouse.storage.class is required when ssdStorage.enabled" .Values.clickhouse.storage.class }}
-provisioner: {{ .Values.ssdStorage.provisioner }}
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
-{{- end }}

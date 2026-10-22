@@ -1,5 +1,0 @@
-apiVersion: v2
-name: flow
-version: 0.1.0
-description: Staged workflow pipelines served by flow-engine
-type: application

@@ -1,5 +1,0 @@
-apiVersion: v2
-name: toxjobs
-version: 0.1.0
-description: Toxicology prediction rigs served over HTTP
-type: application

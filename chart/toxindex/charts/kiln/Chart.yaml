@@ -1,5 +1,0 @@
-apiVersion: v2
-name: kiln
-version: 0.3.0
-description: Kiln data pipeline
-type: application

@@ -1,3 +1,0 @@
-{{- if and (not .Values.manager.enabled) .Values.remoteManager.enabled }}
-{{ include "toxindex.remoteService" (dict "name" "toxjobs-manager" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteManager.tailnetFqdn "labels" (include "toxjobs.labels" (dict "name" "toxjobs-manager" "component" "manager" "release" $.Release.Name))) }}
-{{- end }}

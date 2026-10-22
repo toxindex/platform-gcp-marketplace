@@ -1,5 +1,0 @@
-apiVersion: v2
-name: crawler
-version: 0.1.0
-description: Crawler search index subset and API
-type: application
