@@ -1,0 +1,12 @@
+{{- if and .Values.api.enabled .Values.remoteApi.enabled }}
+{{- fail "sysrev: api.enabled and remoteApi.enabled are mutually exclusive — serve sysrev-api locally or point at a remote one" }}
+{{- end }}
+{{- if not (or .Values.api.enabled .Values.remoteApi.enabled) }}
+{{- fail "sysrev: api endpoint is unavailable — enable sysrev.api.enabled (local) or sysrev.remoteApi.enabled (remote)" }}
+{{- end }}
+{{- if and .Values.api.enabled (not .Values.postgres.enabled) (not .Values.postgres.host) }}
+{{- fail "sysrev: postgres.host is required when postgres.enabled is false" }}
+{{- end }}
+{{- if and .Values.remoteApi.enabled .Values.postgres.enabled }}
+{{- fail "sysrev: postgres.enabled has nothing to serve when the api is remote — set sysrev.postgres.enabled to false" }}
+{{- end }}

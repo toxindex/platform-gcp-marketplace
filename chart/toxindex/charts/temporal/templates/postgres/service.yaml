@@ -1,0 +1,16 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: temporal-postgres
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "temporal.labels" (dict "name" "temporal-postgres" "component" "database" "release" $.Release.Name) | nindent 4 }}
+spec:
+  selector:
+    {{- include "temporal.selectorLabels" (dict "name" "temporal-postgres") | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+{{- end }}

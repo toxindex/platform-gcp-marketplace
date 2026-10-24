@@ -1,0 +1,3 @@
+{{- if and (not .Values.api.enabled) .Values.remoteApi.enabled }}
+{{- include "toxindex.remoteService" (dict "name" "sysrev-api" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteApi.tailnetFqdn "labels" (include "sysrev.labels" (dict "name" "sysrev-api" "component" "backend" "release" $.Release.Name))) }}
+{{- end }}

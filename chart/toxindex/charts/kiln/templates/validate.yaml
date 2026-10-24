@@ -1,3 +1,24 @@
-{{- if not (or .Values.clickhouse.enabled .Values.remoteClickhouse.enabled) }}
+{{- if and (or .Values.loader.enabled .Values.sparql.enabled .Values.fts.enabled) (not (or .Values.clickhouse.enabled .Values.remoteClickhouse.enabled)) }}
 {{- fail "kiln: clickhouse endpoint is unavailable — enable kiln.clickhouse.enabled (local) or kiln.remoteClickhouse.enabled (remote)" }}
+{{- end }}
+{{- if not (or .Values.sparql.enabled .Values.remoteSparql.enabled) }}
+{{- fail "kiln: sparql endpoint is unavailable — enable kiln.sparql.enabled (local) or kiln.remoteSparql.enabled (remote)" }}
+{{- end }}
+{{- if not (or .Values.fts.enabled .Values.remoteFts.enabled) }}
+{{- fail "kiln: fts endpoint is unavailable — enable kiln.fts.enabled (local) or kiln.remoteFts.enabled (remote)" }}
+{{- end }}
+{{- if not (or .Values.query.enabled .Values.remoteQuery.enabled) }}
+{{- fail "kiln: query endpoint is unavailable — enable kiln.query.enabled (local) or kiln.remoteQuery.enabled (remote)" }}
+{{- end }}
+{{- if and .Values.sparql.enabled (not .Values.clickhouse.enabled) }}
+{{- fail "kiln: kiln-sparql reads clickhouse as the plan gate's shared reader and must run beside it — enable kiln.clickhouse.enabled, or reach a remote endpoint with kiln.remoteSparql.enabled" }}
+{{- end }}
+{{- if and .Values.fts.enabled (not .Values.clickhouse.enabled) }}
+{{- fail "kiln: kiln-fts builds its indexes by reading clickhouse and must run beside it — enable kiln.clickhouse.enabled, or reach a remote service with kiln.remoteFts.enabled" }}
+{{- end }}
+{{- if and .Values.query.enabled (not .Values.clickhouse.enabled) }}
+{{- fail "kiln: kiln-query administers clickhouse and must run beside it — enable kiln.clickhouse.enabled, or reach a remote gate with kiln.remoteQuery.enabled" }}
+{{- end }}
+{{- if and .Values.loader.enabled (not .Values.clickhouse.enabled) }}
+{{- fail "kiln: kiln-loader places built tables in clickhouse's own data volume and must run beside it — enable kiln.clickhouse.enabled" }}
 {{- end }}

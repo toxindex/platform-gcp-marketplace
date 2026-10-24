@@ -9,24 +9,28 @@ metadata:
 data:
   rigs.json: |
     {{- $rigs := list }}
+    {{- $rigTools := .Files.Get "rig-tools.json" | fromJson }}
     {{- range $name, $img := .Values.global.images }}
     {{- if hasPrefix "toxjobs-" $name }}
     {{- if ne $name "toxjobs-manager" }}
+    {{- if not (has $name $.Values.manager.excludeRigs) }}
     {{- $gpu := has $name $.Values.manager.gpuRigs }}
     {{- $rigOverride := dig $name "resources" nil $.Values.manager.rigOverrides }}
-    {{- $resources := dict }}
-    {{- if $gpu }}
-    {{- $resources = $.Values.manager.gpu.resources }}
-    {{- else if $rigOverride }}
-    {{- $resources = $rigOverride }}
-    {{- else }}
-    {{- $resources = $.Values.manager.resources }}
+    {{- /* Merge the override onto the class default; replacing would drop nvidia.com/gpu. */}}
+    {{- $resources := ternary $.Values.manager.gpu.resources $.Values.manager.resources $gpu }}
+    {{- if $rigOverride }}
+    {{- $resources = mergeOverwrite (deepCopy $resources) $rigOverride }}
     {{- end }}
     {{- $startupProbe := ternary $.Values.manager.gpu.startupProbe $.Values.manager.startupProbe $gpu }}
-    {{- $rig := dict "name" $name "image" (include "toxindex.toolImage" (dict "root" $ "name" $name)) "gpu" $gpu "resources" $resources "startupProbe" $startupProbe }}
+    {{- $rigEnv := dig $name "env" dict $.Values.manager.rigOverrides }}
+    {{- $tools := dig $name (list) $rigTools }}
+    {{- $rig := dict "name" $name "image" (include "toxindex.toolImage" (dict "root" $ "name" $name)) "gpu" $gpu "tools" $tools "resources" $resources "startupProbe" $startupProbe "env" $rigEnv }}
     {{- $rigs = append $rigs $rig }}
     {{- end }}
     {{- end }}
     {{- end }}
+    {{- end }}
     {{- toJson $rigs | nindent 4 }}
+  gpu.json: |
+    {{- .Values.global.gpu | default dict | toJson | nindent 4 }}
 {{- end }}

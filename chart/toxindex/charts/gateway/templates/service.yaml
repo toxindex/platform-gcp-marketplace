@@ -6,6 +6,10 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
+  {{- if .Values.backendConfig.enabled }}
+  annotations:
+    cloud.google.com/backend-config: '{"default":"gateway"}'
+  {{- end }}
 spec:
   selector:
     {{- include "gateway.selectorLabels" (dict "name" "gateway") | nindent 4 }}

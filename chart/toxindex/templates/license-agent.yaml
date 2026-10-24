@@ -6,10 +6,7 @@ metadata:
   name: license-agent
   namespace: {{ $ns }}
   labels:
-    app.kubernetes.io/name: license-agent
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/part-of: toxindex
-    app.kubernetes.io/component: license
+    {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -17,10 +14,7 @@ metadata:
   name: license-agent
   namespace: {{ $ns }}
   labels:
-    app.kubernetes.io/name: license-agent
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/part-of: toxindex
-    app.kubernetes.io/component: license
+    {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: [secrets]
@@ -32,10 +26,7 @@ metadata:
   name: license-agent
   namespace: {{ $ns }}
   labels:
-    app.kubernetes.io/name: license-agent
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/part-of: toxindex
-    app.kubernetes.io/component: license
+    {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -51,17 +42,14 @@ metadata:
   name: license-agent
   namespace: {{ $ns }}
   labels:
-    app.kubernetes.io/name: license-agent
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/part-of: toxindex
-    app.kubernetes.io/component: license
+    {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
 data:
   config.json: |
     {{- $datasets := dict }}
     {{- range $name, $ds := .Values.global.datasets }}
     {{- $_ := set $datasets $name (include "toxindex.license.datasetSecret" (dict "root" $ "name" $name)) }}
     {{- end }}
-    {{- $config := dict "registrySecret" (include "toxindex.license.registrySecret" (dict "root" .)) "datasets" $datasets }}
+    {{- $config := dict "registryHost" (include "toxindex.license.registryHost" (dict "root" .)) "registrySecret" (include "toxindex.license.registrySecret" (dict "root" .)) "grantsSecret" (include "toxindex.license.grantsSecret" (dict "root" .)) "entitlementsSecret" (include "toxindex.license.entitlementsSecret" (dict "root" .)) "installSecret" (include "toxindex.license.installSecret" (dict "root" .)) "datasets" $datasets }}
     {{- toJson $config | nindent 4 }}
 ---
 apiVersion: apps/v1
@@ -70,10 +58,7 @@ metadata:
   name: license-agent
   namespace: {{ $ns }}
   labels:
-    app.kubernetes.io/name: license-agent
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/part-of: toxindex
-    app.kubernetes.io/component: license
+    {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -82,10 +67,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: license-agent
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/part-of: toxindex
-        app.kubernetes.io/component: license
+        {{- include "toxindex.labels" (dict "name" "license-agent" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 8 }}
     spec:
       serviceAccountName: license-agent
       securityContext:
@@ -102,6 +84,8 @@ spec:
             - name: LICENSE_PUBLIC_KEY
               value: {{ . | quote }}
             {{- end }}
+            - name: CHART_VERSION
+              value: {{ .Chart.Version | quote }}
             - name: CONFIG_FILE
               value: /etc/license-agent/config.json
             - name: LICENSE_FILE

@@ -1,0 +1,283 @@
+{
+  "toxjobs-ablang2": [
+    "ablang2-embed"
+  ],
+  "toxjobs-admet-ai": [
+    "admet-ai"
+  ],
+  "toxjobs-admetica": [
+    "admetica"
+  ],
+  "toxjobs-aizynthfinder": [
+    "aizynth-retrosynthesis"
+  ],
+  "toxjobs-align": [
+    "sequence-identity"
+  ],
+  "toxjobs-amesformer": [
+    "amesformer"
+  ],
+  "toxjobs-amplify": [
+    "amplify-amp"
+  ],
+  "toxjobs-biotransformer": [
+    "biotransformer"
+  ],
+  "toxjobs-conplex": [
+    "conplex-dti"
+  ],
+  "toxjobs-crem": [
+    "crem-mutate"
+  ],
+  "toxjobs-ctoxpred": [
+    "cardiotoxicity"
+  ],
+  "toxjobs-deeppurpose": [
+    "drug-target-affinity"
+  ],
+  "toxjobs-dtox": [
+    "dtox"
+  ],
+  "toxjobs-e3fp": [
+    "e3fp-fingerprint"
+  ],
+  "toxjobs-esmfold": [
+    "esmfold-predict"
+  ],
+  "toxjobs-etoxpred": [
+    "etoxpred"
+  ],
+  "toxjobs-exposome": [
+    "exposome-tox"
+  ],
+  "toxjobs-glmcyp": [
+    "glmcyp-som"
+  ],
+  "toxjobs-gnina": [
+    "gnina-dock"
+  ],
+  "toxjobs-gt4sd": [
+    "gt4sd-toxicity"
+  ],
+  "toxjobs-gtranscyps": [
+    "gtranscyps-cyp-inhibition"
+  ],
+  "toxjobs-hgraph2graph": [
+    "hgraph2graph-generate"
+  ],
+  "toxjobs-hobpre": [
+    "hobpre"
+  ],
+  "toxjobs-httk": [
+    "httk"
+  ],
+  "toxjobs-indigo": [
+    "indigo-fingerprint",
+    "indigo-substructure"
+  ],
+  "toxjobs-metabognn": [
+    "metabognn"
+  ],
+  "toxjobs-metapredictor": [
+    "metapredictor"
+  ],
+  "toxjobs-mhcflurry": [
+    "mhcflurry-binding"
+  ],
+  "toxjobs-mordred": [
+    "mordred-descriptors"
+  ],
+  "toxjobs-ncats-adme": [
+    "ncats-solubility"
+  ],
+  "toxjobs-openadmet": [
+    "openadmet"
+  ],
+  "toxjobs-opera": [
+    "opera-aoh",
+    "opera-bcf",
+    "opera-biodeg",
+    "opera-bp",
+    "opera-caco2",
+    "opera-catmos",
+    "opera-cerapp",
+    "opera-clint",
+    "opera-compara",
+    "opera-fub",
+    "opera-henrylc",
+    "opera-hl",
+    "opera-km",
+    "opera-koa",
+    "opera-koc",
+    "opera-logd",
+    "opera-logp",
+    "opera-mp",
+    "opera-pka",
+    "opera-rb",
+    "opera-vp",
+    "opera-ws"
+  ],
+  "toxjobs-padel": [
+    "padel-descriptors"
+  ],
+  "toxjobs-pksmart": [
+    "pksmart"
+  ],
+  "toxjobs-pleiome": [
+    "pleiome"
+  ],
+  "toxjobs-plip": [
+    "plip-interactions"
+  ],
+  "toxjobs-pmi": [
+    "pmi-calculator"
+  ],
+  "toxjobs-pqsar": [
+    "pqsar"
+  ],
+  "toxjobs-promb": [
+    "humanness"
+  ],
+  "toxjobs-qtb": [
+    "calculation-all-for-chem",
+    "calculation-info",
+    "calculation-list-all",
+    "calculation-single",
+    "data-all-for-chem",
+    "data-by-ids",
+    "data-databases",
+    "data-endpoint-tree",
+    "data-for-chem",
+    "data-get-endpoints",
+    "data-get-units",
+    "data-metadata-hierarchy",
+    "export-smi",
+    "grouping-retrieve",
+    "iuclid-databases",
+    "iuclid-search-by-cas",
+    "iuclid-search-by-ecnumber",
+    "iuclid-search-by-name",
+    "iuclid-search-by-smiles",
+    "iuclid-search-data",
+    "metabolism-by-chem",
+    "metabolism-info",
+    "metabolism-list-all",
+    "profiling-all-for-chem",
+    "profiling-categories",
+    "profiling-info",
+    "profiling-list-all",
+    "profiling-literature",
+    "profiling-profile-chem",
+    "profiling-relevancies",
+    "qsar-domain",
+    "qsar-list",
+    "qsar-predict",
+    "report-workflow",
+    "search-by-cas",
+    "search-by-ecnumber",
+    "search-by-name-contains",
+    "search-by-name-exact",
+    "search-by-smarts",
+    "search-by-smiles",
+    "search-databases",
+    "search-get-chemical",
+    "structure-canonize",
+    "structure-connectivity",
+    "workflows-execute",
+    "workflows-list-all"
+  ],
+  "toxjobs-rdchiral": [
+    "rdchiral-apply"
+  ],
+  "toxjobs-rdkit": [
+    "activity-cliff-detector",
+    "ames-structural-alerts",
+    "autosom",
+    "bbb-predictor",
+    "bioavailability-predictor",
+    "bmd-calculator",
+    "bmdrc",
+    "clearance-predictor",
+    "cpca-classifier",
+    "cytosafe",
+    "descriptor-calculator",
+    "drug-likeness-scorer",
+    "fingerprint-generator",
+    "genra",
+    "half-life-predictor",
+    "herg-predictor",
+    "knowtox",
+    "logp-predictor",
+    "matchms",
+    "mcs-calculator",
+    "ml-pka",
+    "molecule-standardizer",
+    "nephrotoxicity-predictor",
+    "nitrosamine-alerts",
+    "oeb-bander",
+    "phospholipidosis-predictor",
+    "pmapper",
+    "ppb-predictor",
+    "readacross-identify",
+    "respiratory-sensitization-alerts",
+    "scaffold-analyzer",
+    "similarity-calculator",
+    "similarity-clustering",
+    "skin-permeability-predictor",
+    "skin-sensitization-predictor",
+    "smarts-matcher",
+    "smiles-parser",
+    "solubility-predictor",
+    "structural-alerts",
+    "uni-pka",
+    "vd-predictor",
+    "vera-read-across"
+  ],
+  "toxjobs-reactiont5": [
+    "reactiont5"
+  ],
+  "toxjobs-soltrannet": [
+    "soltrannet"
+  ],
+  "toxjobs-stoptox": [
+    "stoptox"
+  ],
+  "toxjobs-sygma": [
+    "metabolic-similarity",
+    "metabolite-predictor",
+    "sygma"
+  ],
+  "toxjobs-thermo": [
+    "thermo-properties"
+  ],
+  "toxjobs-tox21": [
+    "tox21"
+  ],
+  "toxjobs-toxtree": [
+    "toxtree-benigni-bossa",
+    "toxtree-cramer"
+  ],
+  "toxjobs-trident": [
+    "trident-algae",
+    "trident-fish",
+    "trident-invertebrates"
+  ],
+  "toxjobs-txgnn": [
+    "txgnn-disease-search",
+    "txgnn-repurposing"
+  ],
+  "toxjobs-vega": [
+    "vega-acute-toxicity",
+    "vega-bcf",
+    "vega-biodegradability",
+    "vega-carcinogenicity",
+    "vega-developmental-toxicity",
+    "vega-endocrine",
+    "vega-eye-irritation",
+    "vega-hepatotoxicity",
+    "vega-mutagenicity",
+    "vega-noael",
+    "vega-skin-irritation",
+    "vega-skin-sensitization"
+  ]
+}

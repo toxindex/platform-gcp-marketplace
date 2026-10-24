@@ -4,9 +4,7 @@ kind: ClusterRole
 metadata:
   name: toxindex-otel-collector
   labels:
-    app.kubernetes.io/name: otel-collector
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: rbac
+    {{- include "toxindex.labels" (dict "name" "otel-collector" "release" $.Release.Name "partOf" "observability" "component" "rbac") | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources:
@@ -43,9 +41,7 @@ kind: ClusterRoleBinding
 metadata:
   name: toxindex-otel-collector
   labels:
-    app.kubernetes.io/name: otel-collector
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: rbac
+    {{- include "toxindex.labels" (dict "name" "otel-collector" "release" $.Release.Name "partOf" "observability" "component" "rbac") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

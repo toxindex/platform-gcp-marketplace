@@ -5,27 +5,30 @@ postgres:
   enabled: true
   host: flow-postgres
   passwordSecret: flow-postgres-password
-  passwordRemoteSecret: ""
   appPasswordSecret: flow-app-password
-  appPasswordRemoteSecret: ""
   resources:
     requests:
       cpu: 50m
       memory: 128Mi
   storage:
-    class: ""
     size: 10Gi
 
 engine:
   enabled: true
   serviceAccount:
-    gcpServiceAccount: ""
+    gcpServiceAccount:
+  temporal:
+    namespace: default
+  artifactStore:
+    bucket:
+    dir: /var/lib/flow/artifacts
+    storage:
+      size: 20Gi
+      class:
+      accessMode: ReadWriteOnce
   vertex:
     project:
     region: global
-    serviceTier: standard
-    credentialsSecret: ""
-    credentialsRemoteSecret: ""
   tailscale:
     expose: false
     hostname: tidx-flow-engine
@@ -36,6 +39,21 @@ engine:
     limits:
       memory: 256Mi
 
+worker:
+  enabled: true
+  replicas: 1
+  drainSeconds: 780
+  serviceAccount:
+    gcpServiceAccount:
+  previous:
+    tag:
+    digest:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 512Mi
+
 remoteFlow:
   enabled: false
-  tailnetFqdn: ""

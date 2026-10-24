@@ -1,0 +1,105 @@
+{{- if .Values.engine.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: git-engine
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "git.labels" (dict "name" "git-engine" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: git-engine
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "git.selectorLabels" (dict "name" "git-engine") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "git.labels" (dict "name" "git-engine" "component" "backend" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 900
+      serviceAccountName: git-engine
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+        {{- if include "git.blobsOnDisk" . }}
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        {{- end }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              elapsed=0
+              until pg_isready -h {{ .Values.postgres.host }} -p 5432 -U git; do
+                elapsed=$((elapsed + 2))
+                if [ "$elapsed" -ge 120 ]; then
+                  echo "timed out waiting for postgres" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+        - name: migrate
+          image: {{ include "toxindex.image" (dict "root" $ "name" "git-db") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "git.migrateDbEnv" (dict "root" $) | nindent 12 }}
+      containers:
+        - name: git-engine
+          image: {{ include "toxindex.image" (dict "root" $ "name" "git-engine") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "git-engine") | nindent 12 }}
+            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "git.dbEnv" (dict "root" $) | nindent 12 }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
+            {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.global.repoStore.bucket "signerServiceAccount" .Values.engine.serviceAccount.gcpServiceAccount "dir" (include "git.blobDir" .)) | nindent 12 }}
+          {{- if include "git.blobsOnDisk" . }}
+          volumeMounts:
+            - name: objects
+              mountPath: {{ include "git.blobDir" . }}
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.engine.resources | nindent 12 }}
+  {{- if include "git.blobsOnDisk" . }}
+  volumeClaimTemplates:
+    - metadata:
+        name: objects
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.engine.repoStore.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.engine.repoStore.storage.size }}
+  {{- end }}
+{{- end }}

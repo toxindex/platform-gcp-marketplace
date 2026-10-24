@@ -1,0 +1,11 @@
+{{- if and .Values.oidc.enabled .Values.ingress.enabled .Values.frontendConfig.sslPolicy }}
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: gateway
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  sslPolicy: {{ .Values.frontendConfig.sslPolicy }}
+{{- end }}

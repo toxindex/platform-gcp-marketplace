@@ -1,0 +1,46 @@
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "insilica", "product_id": "toxindex", "partner_name": "Insilica"}'
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+spec:
+  descriptor:
+    type: ToxIndex
+    version: {{ .Chart.Version | quote }}
+    description: ToxIndex computational toxicology platform.
+    maintainers:
+      - name: Insilica
+        url: https://insilica.co
+    links:
+      - description: User guide
+        url: https://github.com/toxindex/platform-gcp-marketplace/blob/main/marketplace/docs/user-guide.md
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  componentKinds:
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: batch
+      kind: Job
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: networking.k8s.io
+      kind: NetworkPolicy

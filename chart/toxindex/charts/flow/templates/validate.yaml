@@ -1,3 +1,14 @@
 {{- if not (or .Values.engine.enabled .Values.remoteFlow.enabled) }}
 {{- fail "flow: engine endpoint is unavailable — enable flow.engine.enabled (local) or flow.remoteFlow.enabled (remote)" }}
 {{- end }}
+
+{{- $store := .Values.engine.artifactStore }}
+{{- if and .Values.worker.enabled (not $store.bucket) }}
+{{- $shared := eq $store.storage.accessMode "ReadWriteMany" }}
+{{- $slots := 1 }}
+{{- if .Values.worker.previous.tag }}{{- $slots = 2 }}{{- end }}
+{{- $pods := mul (int .Values.worker.replicas) $slots }}
+{{- if and (gt $pods 1) (not $shared) }}
+{{- fail (printf "flow: %d worker pods share one %s artifact volume, which only holds while they land on the same node. Set flow.engine.artifactStore.bucket, or a storage class whose accessMode is ReadWriteMany." $pods $store.storage.accessMode) }}
+{{- end }}
+{{- end }}

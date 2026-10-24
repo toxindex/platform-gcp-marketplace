@@ -1,0 +1,20 @@
+{{- if .Values.api.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sysrev-api
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-api" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+  {{- if .Values.api.tailscale.expose }}
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: {{ .Values.api.tailscale.hostname }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "sysrev.selectorLabels" (dict "name" "sysrev-api") | nindent 4 }}
+  ports:
+    - port: 80
+      targetPort: 8080
+{{- end }}

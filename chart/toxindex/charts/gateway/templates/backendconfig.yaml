@@ -1,0 +1,13 @@
+{{- if and .Values.oidc.enabled .Values.backendConfig.enabled }}
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: gateway
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  timeoutSec: {{ .Values.upstreamTimeoutSec }}
+  connectionDraining:
+    drainingTimeoutSec: {{ .Values.backendConfig.connectionDrainingTimeoutSec }}
+{{- end }}

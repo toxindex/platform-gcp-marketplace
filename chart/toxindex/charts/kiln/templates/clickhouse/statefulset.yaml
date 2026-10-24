@@ -18,6 +18,9 @@ spec:
     metadata:
       labels:
         {{- include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name) | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/clickhouse/configmap.yaml") $ | sha256sum }}
+        checksum/users: {{ include (print $.Template.BasePath "/clickhouse/users-configmap.yaml") $ | sha256sum }}
     spec:
       containers:
         - name: clickhouse
@@ -28,6 +31,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.clickhouse.loaderPasswordSecret }}
                   key: password
+            - name: CLICKHOUSE_GATEKEEPER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.query.credentialsSecret }}
+                  key: gatekeeper-password
+            - name: CLICKHOUSE_FTS_INDEXER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.query.credentialsSecret }}
+                  key: fts-indexer-password
           ports:
             - name: native
               containerPort: 9000

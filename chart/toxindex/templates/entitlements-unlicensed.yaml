@@ -1,0 +1,12 @@
+{{- if not (include "toxindex.license.enabled" (dict "root" .)) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "toxindex.entitlementsUnlicensedConfigMap" (dict "root" .) }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxindex.labels" (dict "name" "entitlements" "release" $.Release.Name "partOf" "toxindex" "component" "license") | nindent 4 }}
+data:
+  plans: |
+    {{- .Files.Get "files/entitlements-unlicensed.json" | nindent 4 }}
+{{- end }}

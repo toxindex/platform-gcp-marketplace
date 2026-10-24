@@ -1,0 +1,91 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- if .Values.api.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sysrev-allow-api-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-api" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sysrev.selectorLabels" (dict "name" "sysrev-api") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: sage
+      ports:
+        - protocol: TCP
+          port: 8080
+    {{- if .Values.api.tailscale.expose }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale
+      ports:
+        - protocol: TCP
+          port: 8080
+    {{- end }}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: sysrev
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: observability
+      ports:
+        - protocol: TCP
+          port: 4317
+    {{- if or .Values.api.blobStore.bucket .Values.api.vertex.project }}
+    - ports:
+        - protocol: TCP
+          port: 443
+    {{- else }}
+    {{- include "toxindex.sentryEgress" (dict "root" $) | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sysrev-allow-postgres-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-postgres" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sysrev.selectorLabels" (dict "name" "sysrev-postgres") | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: sysrev
+      ports:
+        - protocol: TCP
+          port: 5432
+{{- end }}
+{{- end }}

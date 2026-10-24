@@ -1,21 +1,27 @@
 dependencies:
-- name: kiln
-  repository: ""
-  version: 0.3.0
-- name: crawler
-  repository: ""
-  version: 0.1.0
-- name: toxjobs
-  repository: ""
-  version: 0.1.0
-- name: flow
-  repository: ""
-  version: 0.1.0
-- name: sage
-  repository: ""
-  version: 0.1.0
-- name: gateway
-  repository: ""
-  version: 0.1.0
-digest: sha256:023080add7d3ab617b1c920254b52fa8c43980bed929cd7ba4bf5c8c324ee142
-generated: "2026-06-22T12:06:39.835839-04:00"
+  - name: kiln
+    repository: ""
+    version: 0.4.0
+  - name: toxjobs
+    repository: ""
+    version: 0.1.0
+  - name: flow
+    repository: ""
+    version: 0.1.0
+  - name: git
+    repository: ""
+    version: 0.1.0
+  - name: temporal
+    repository: ""
+    version: 0.1.0
+  - name: sage
+    repository: ""
+    version: 0.1.0
+  - name: sysrev
+    repository: ""
+    version: 0.1.0
+  - name: gateway
+    repository: ""
+    version: 0.1.0
+digest: sha256:f2bbd16a60afe6091dc6e6f3b20f8f5545d76869046560b1dff1274d8f355352
+generated: "2026-09-09T13:39:48.826735283Z"

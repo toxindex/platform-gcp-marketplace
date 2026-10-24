@@ -1,0 +1,20 @@
+{{- if and (or .Values.engine.enabled .Values.worker.enabled) (not .Values.engine.artifactStore.bucket) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: flow-artifacts
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "flow.labels" (dict "name" "flow-artifacts" "component" "storage" "release" $.Release.Name) | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - {{ .Values.engine.artifactStore.storage.accessMode }}
+  {{- with .Values.engine.artifactStore.storage.class }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.engine.artifactStore.storage.size }}
+{{- end }}

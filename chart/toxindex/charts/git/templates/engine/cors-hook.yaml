@@ -1,0 +1,50 @@
+{{- if and .Values.engine.enabled .Values.global.repoStore.bucket }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flow-bucket-cors
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "git.labels" (dict "name" "flow-bucket-cors" "component" "provisioning" "release" $.Release.Name) | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "git.labels" (dict "name" "flow-bucket-cors" "component" "provisioning" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: git-engine
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      containers:
+        - name: set-cors
+          image: {{ include "toxindex.image" (dict "root" $ "name" "cloud-sdk") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            - name: HOME
+              value: /tmp
+            - name: CLOUDSDK_CONFIG
+              value: /tmp/gcloud
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              cat > /tmp/cors.json <<'EOF'
+              [
+                {
+                  "origin": ["https://{{ required "global.domain is required when global.repoStore.bucket is set" .Values.global.domain }}"],
+                  "method": ["GET", "HEAD", "PUT"],
+                  "responseHeader": ["Content-Type", "Range", "Content-Range"],
+                  "maxAgeSeconds": 3600
+                }
+              ]
+              EOF
+              gcloud storage buckets update gs://{{ .Values.global.repoStore.bucket }} --cors-file=/tmp/cors.json
+{{- end }}

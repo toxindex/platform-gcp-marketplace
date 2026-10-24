@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: toxjobs-manager
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  annotations:
+    ignore-check.kube-linter.io/env-var-secret: RIG_PULL_SECRET and GRANTS_SECRET carry Secret names, not secret values
   labels:
     {{- include "toxjobs.labels" (dict "name" "toxjobs-manager" "component" "manager" "release" $.Release.Name) | nindent 4 }}
 spec:
@@ -33,25 +35,40 @@ spec:
           securityContext:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: {{ .Values.manager.metricsPort }}
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "toxjobs-manager") | nindent 12 }}
             - name: NAMESPACE
               value: {{ (.Values.global.namespace | default .Release.Namespace) | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.manager.metricsPort | quote }}
             - name: RIG_CONFIG_PATH
               value: /etc/toxjobs/rigs.json
+            - name: GPU_CONFIG_PATH
+              value: /etc/toxjobs/gpu.json
             - name: RIG_PORT
               value: {{ .Values.manager.rigPort | quote }}
             - name: RIG_SERVICE_ACCOUNT
               value: rig-server
             - name: RIG_PULL_SECRET
               value: {{ .Values.global.license.registrySecret | quote }}
-            {{- with .Values.manager.rigAllowlist }}
-            - name: RIG_ALLOWLIST
-              value: {{ join "," . | quote }}
-            {{- end }}
+            - name: RIG_GRANTS
+              value: {{ join "," (.Values.manager.rigGrants | required "manager.rigGrants must name the rigs and tools this install may run") | quote }}
+            - name: GRANTS_SECRET
+              value: {{ .Values.global.license.grantsSecret | quote }}
+            - name: GRANTS_PUBLIC_KEY
+              value: {{ .Values.global.license.grantsPublicKey | required "global.license.grantsPublicKey must be pinned to verify grant manifests offline" | quote }}
             - name: RECONCILE_INTERVAL
               value: {{ .Values.manager.reconcileInterval | quote }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
+            {{- include "toxindex.entitlementsEnv" (dict "root" $) | nindent 12 }}
             - name: RIG_ENV_OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ include "toxindex.otelEndpoint" (dict "root" $) | quote }}
             - name: RIG_ENV_OTEL_RESOURCE_ATTRIBUTES
@@ -64,15 +81,12 @@ spec:
             - name: rig-config
               mountPath: /etc/toxjobs
               readOnly: true
+            {{- include "toxindex.entitlementsVolumeMount" (dict "root" $) | nindent 12 }}
           resources:
             {{- toYaml .Values.manager.managerResources | nindent 12 }}
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: 8080
           livenessProbe:
             httpGet:
@@ -82,4 +96,5 @@ spec:
         - name: rig-config
           configMap:
             name: toxjobs-manager
+        {{- include "toxindex.entitlementsVolume" (dict "root" $) | nindent 8 }}
 {{- end }}

@@ -1,0 +1,105 @@
+{{- if .Values.fts.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kiln-fts
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: kiln-fts
+  selector:
+    matchLabels:
+      {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "backend" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+        fsGroup: 65532
+      containers:
+        - name: fts
+          image: {{ include "toxindex.image" (dict "root" $ "name" "kiln-fts") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "kiln-fts") | nindent 12 }}
+            - name: CLICKHOUSE_URL
+              value: {{ include "toxindex.upstream.kilnClickhouse" . | quote }}
+            - name: CLICKHOUSE_USER
+              value: fts_indexer
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.query.credentialsSecret }}
+                  key: fts-indexer-password
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
+            - name: LICENSE_FILE
+              value: /etc/license/license
+            - name: LICENSE_BROKER_URL
+              value: {{ .Values.global.license.brokerUrl | quote }}
+            - name: INDEX_DIR
+              value: /var/lib/kiln-fts
+            - name: INDEX_INTERVAL_SECONDS
+              value: {{ .Values.fts.intervalSeconds | quote }}
+            {{- include "toxindex.entitlementsEnv" (dict "root" $) | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: index
+              mountPath: /var/lib/kiln-fts
+            - name: license
+              mountPath: /etc/license
+              readOnly: true
+            {{- include "toxindex.entitlementsVolumeMount" (dict "root" $) | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.fts.resources | nindent 12 }}
+      volumes:
+        - name: license
+          secret:
+            secretName: {{ include "toxindex.license.secret" (dict "root" $) }}
+            optional: true
+        {{- include "toxindex.entitlementsVolume" (dict "root" $) | nindent 8 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: index
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.fts.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.fts.storage.size }}
+{{- end }}

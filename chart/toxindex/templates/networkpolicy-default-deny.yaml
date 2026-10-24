@@ -1,0 +1,19 @@
+{{- $denies := or .Values.observability.enabled (include "toxindex.license.enabled" (dict "root" .)) -}}
+{{- range $k, $v := .Values -}}
+{{- if and (kindIs "map" $v) (dig "networkPolicy" "enabled" false $v) -}}
+{{- $denies = true -}}
+{{- end -}}
+{{- end -}}
+{{- if $denies }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "toxindex.labels" (dict "name" "default-deny-ingress" "release" $.Release.Name "partOf" "toxindex" "component" "network-policy") | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+{{- end }}

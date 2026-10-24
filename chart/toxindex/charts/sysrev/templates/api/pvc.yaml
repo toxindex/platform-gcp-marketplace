@@ -1,0 +1,18 @@
+{{- if and .Values.api.enabled (not .Values.api.blobStore.bucket) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sysrev-blobs
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-api" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.api.storage.class }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.api.storage.size }}
+{{- end }}

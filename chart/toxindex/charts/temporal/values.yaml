@@ -1,0 +1,58 @@
+networkPolicy:
+  enabled: true
+
+postgres:
+  enabled: true
+  host: temporal-postgres
+  passwordSecret: temporal-postgres-password
+  user: temporal
+  database: temporal
+  visibilityDatabase: temporal_visibility
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  storage:
+    size: 10Gi
+
+server:
+  hostPort: temporal-server:7233
+  metricsPort: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  schema:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+ui:
+  enabled: true
+  tailscale:
+    expose: false
+    hostname: tidx-temporal
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+namespaces:
+  - default
+
+namespaceProvisioner:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi

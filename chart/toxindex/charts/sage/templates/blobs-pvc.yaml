@@ -1,0 +1,18 @@
+{{- if and (include "sage.blobsOnDisk" .) (or .Values.controlPlane.enabled .Values.agent.enabled) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sage-blobs
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sage.labels" (dict "name" "sage-blobs" "component" "storage" "release" $.Release.Name) | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.fileStore.storage.class }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.fileStore.storage.size }}
+{{- end }}

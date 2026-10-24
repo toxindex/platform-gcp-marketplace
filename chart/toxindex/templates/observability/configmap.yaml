@@ -10,9 +10,7 @@ metadata:
   name: otel-collector
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: otel-collector
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: collector
+    {{- include "toxindex.labels" (dict "name" "otel-collector" "release" $.Release.Name "partOf" "observability" "component" "collector") | nindent 4 }}
 data:
   config.yaml: |
     receivers:
@@ -45,6 +43,61 @@ data:
                 - source_labels: [__meta_kubernetes_pod_container_port_name]
                   action: keep
                   regex: http-prom
+            - job_name: external-secrets
+              scrape_interval: 30s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [external-secrets]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  action: keep
+                  regex: metrics
+            {{- if .Values.global.gpu.runtimeClassName }}
+            - job_name: dcgm-exporter
+              scrape_interval: 30s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [{{ .Values.global.namespace | default .Release.Namespace }}]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                  action: keep
+                  regex: dcgm-exporter
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  action: keep
+                  regex: metrics
+            {{- end }}
+            {{- if and .Values.toxjobs.enabled .Values.toxjobs.manager.enabled }}
+            - job_name: toxjobs-manager
+              scrape_interval: 30s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [{{ .Values.global.namespace | default .Release.Namespace }}]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                  action: keep
+                  regex: toxjobs-manager
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  action: keep
+                  regex: metrics
+            {{- end }}
+            {{- if .Values.temporal.enabled }}
+            - job_name: temporal-server
+              scrape_interval: 30s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [{{ .Values.global.namespace | default .Release.Namespace }}]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                  action: keep
+                  regex: temporal-server
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  action: keep
+                  regex: metrics
+            {{- end }}
             {{- with .Values.observability.extraScrapeConfigs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

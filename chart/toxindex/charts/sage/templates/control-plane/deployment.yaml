@@ -9,10 +9,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    {{- include "sage.rolloutStrategy" . | nindent 4 }}
   minReadySeconds: 10
   selector:
     matchLabels:
@@ -23,11 +20,27 @@ spec:
         {{- include "sage.labels" (dict "name" "sage-control-plane" "component" "frontend" "release" $.Release.Name) | nindent 8 }}
     spec:
       serviceAccountName: sage-control-plane
+      terminationGracePeriodSeconds: 45
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+        {{- if include "sage.blobsOnDisk" . }}
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        {{- end }}
+      {{- if and (include "sage.blobsOnDisk" .) .Values.agent.enabled }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "sage.selectorLabels" (dict "name" "sage-agent") | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
+      {{- end }}
       initContainers:
         - name: wait-for-postgres
-          image: {{ include "toxindex.image" (dict "root" $ "name" "sage-postgres") | quote }}
+          image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
           securityContext:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           command:
@@ -56,30 +69,46 @@ spec:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "sage-control-plane") | nindent 12 }}
+            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.operatorEnv" (dict "root" $) | nindent 12 }}
             - name: SAGE_AGENT_URL
               value: {{ .Values.controlPlane.agentUrl | quote }}
-            - name: CRAWLER_SEARCH_URL
-              value: {{ include "toxindex.upstream.crawlerSearch" . | quote }}
             - name: KILN_CLICKHOUSE_URL
-              value: {{ include "toxindex.upstream.kilnClickhouse" . | quote }}
+              value: {{ include "toxindex.upstream.kilnQuery" . | quote }}
             - name: KILN_RESOLVER_URL
               value: {{ include "toxindex.upstream.kilnResolver" . | quote }}
-            - name: CRAWLER_RESOLVER_URL
-              value: {{ include "toxindex.upstream.crawlerResolver" . | quote }}
+            - name: KILN_SPARQL_URL
+              value: {{ include "toxindex.upstream.kilnSparql" . | quote }}
+            - name: KILN_FTS_URL
+              value: {{ include "toxindex.upstream.kilnFts" . | quote }}
             - name: FLOW_ENGINE_URL
               value: {{ include "toxindex.upstream.flowEngine" . | quote }}
+            - name: GIT_ENGINE_URL
+              value: {{ include "toxindex.upstream.gitEngine" . | quote }}
+            {{- if .Values.global.sysrev.enabled }}
+            - name: SYSREV_API_URL
+              value: {{ include "toxindex.upstream.sysrevApi" . | quote }}
+            {{- end }}
             - name: TOXJOBS_URL
               value: {{ include "toxindex.upstream.toxjobs" . | quote }}
-            - name: IDENTITY_MODE
-              value: {{ .Values.global.identityMode | quote }}
+            - name: AUTH
+              value: {{ .Values.global.auth | quote }}
+            - name: BLOB_STORAGE_ORIGIN
+              value: {{ .Values.global.storage.host | quote }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
             {{- include "sage.dbEnv" (dict "root" $) | nindent 12 }}
-            {{- include "sage.fileStoreEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.fileStore.bucket "signerServiceAccount" .Values.fileStore.serviceAccount.gcpServiceAccount "dir" (include "sage.blobDir" .)) | nindent 12 }}
+          {{- if include "sage.blobsOnDisk" . }}
+          volumeMounts:
+            - name: blobs
+              mountPath: {{ include "sage.blobDir" . }}
+          {{- end }}
           ports:
             - containerPort: 8080
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
           readinessProbe:
             httpGet:
               path: /healthz
@@ -99,4 +128,10 @@ spec:
               memory: {{ .Values.controlPlane.resources.requests.memory | quote }}
             limits:
               memory: {{ .Values.controlPlane.resources.limits.memory | quote }}
+      {{- if include "sage.blobsOnDisk" . }}
+      volumes:
+        - name: blobs
+          persistentVolumeClaim:
+            claimName: sage-blobs
+      {{- end }}
 {{- end }}

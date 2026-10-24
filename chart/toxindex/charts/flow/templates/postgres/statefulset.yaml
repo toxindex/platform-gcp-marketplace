@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: {{ include "toxindex.image" (dict "root" $ "name" "flow-postgres") | quote }}
+          image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
           env:
             - name: POSTGRES_DB
               value: flow

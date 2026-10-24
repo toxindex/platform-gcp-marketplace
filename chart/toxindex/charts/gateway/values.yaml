@@ -1,21 +1,18 @@
+replicas: 2
+
 networkPolicy:
   enabled: true
 
 oidc:
   enabled: false
-  issuerUrl: ""
-  clientId: ""
   emailDomains: "*"
-  redirectUrl: ""
   secretName: oidc
-  remoteSecret: ""
   cookieSecret: gateway-cookie
-  scope: ""
+  # Per-flow CSRF cookies, so overlapping logins don't 403 each other.
+  csrfPerRequestLimit: 5
+  csrfExpire: 15m
   claims:
-    group: ""
     user: email
-    groupName: ""
-    userName: ""
 
 resources:
   requests:
@@ -24,10 +21,15 @@ resources:
 
 ingress:
   enabled: false
-  className: ""
-  host: ""
-  tlsSecret: ""
-  annotations: {}
+
+frontendConfig:
+  sslPolicy: ""
+
+upstreamTimeoutSec: 3600
+
+backendConfig:
+  enabled: false
+  connectionDrainingTimeoutSec: 60
 
 routes:
   - path: /

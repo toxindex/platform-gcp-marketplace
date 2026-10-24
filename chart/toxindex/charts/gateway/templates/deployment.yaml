@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,6 +19,8 @@ spec:
       {{- include "gateway.selectorLabels" (dict "name" "gateway") | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/alpha-config: {{ include (print $.Template.BasePath "/configmap-alpha.yaml") . | sha256sum }}
       labels:
         {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 8 }}
     spec:
@@ -34,7 +36,15 @@ spec:
             - --cookie-secret=$(COOKIE_SECRET)
             - --email-domain={{ .Values.oidc.emailDomains }}
             - --skip-provider-button=true
+            # One shared CSRF cookie lets concurrent logins clobber each other:
+            # a second /oauth2/start overwrites the first flow's nonce, so its
+            # callback 403s. Name the cookie per flow instead, and cap how many
+            # can pile up.
+            - --cookie-csrf-per-request=true
+            - --cookie-csrf-per-request-limit={{ .Values.oidc.csrfPerRequestLimit }}
+            - --cookie-csrf-expire={{ .Values.oidc.csrfExpire }}
             - --skip-auth-route=^/(mcp|v1|a2a|oauth|\.well-known)(/|$)
+            - --skip-auth-route=^/(terms|privacy)$
             {{- with .Values.oidc.redirectUrl }}
             - --redirect-url={{ . }}
             {{- end }}
@@ -47,6 +57,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.oidc.cookieSecret }}
                   key: cookie-secret
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
           volumeMounts:
             - name: alpha-config
               mountPath: /etc/oauth2-proxy
@@ -60,10 +75,7 @@ spec:
           {{- end }}
           ports:
             - containerPort: 4180
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
+          {{- include "toxindex.preStopDrain" . | nindent 10 }}
           readinessProbe:
             httpGet:
               path: /ping

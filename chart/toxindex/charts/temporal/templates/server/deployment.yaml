@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-server
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "temporal.labels" (dict "name" "temporal-server" "component" "workflow-engine" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "temporal.selectorLabels" (dict "name" "temporal-server") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "temporal.labels" (dict "name" "temporal-server" "component" "workflow-engine" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 1000 "gid" 1000) | nindent 8 }}
+      initContainers:
+        - name: temporal-schema
+          image: {{ include "toxindex.image" (dict "root" $ "name" "temporal-admin-tools") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" . | nindent 12 }}
+          env:
+            - name: SQL_PLUGIN
+              value: postgres12
+            - name: SQL_HOST
+              value: {{ .Values.postgres.host | quote }}
+            - name: SQL_PORT
+              value: "5432"
+            - name: SQL_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: SQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.passwordSecret }}
+                  key: password
+          command:
+            - sh
+            - -ec
+            - |
+              elapsed=0
+              until nc -z "$SQL_HOST" "$SQL_PORT"; do
+                elapsed=$((elapsed + 2))
+                if [ "$elapsed" -ge 180 ]; then
+                  echo "timed out waiting for postgres at $SQL_HOST:$SQL_PORT" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+              migrate() {
+                temporal-sql-tool --db "$1" setup-schema -v 0.0
+                temporal-sql-tool --db "$1" update-schema -d "$2"
+              }
+              temporal-sql-tool --db {{ .Values.postgres.visibilityDatabase | quote }} create-database
+              migrate {{ .Values.postgres.database | quote }} /etc/temporal/schema/postgresql/v12/temporal/versioned
+              migrate {{ .Values.postgres.visibilityDatabase | quote }} /etc/temporal/schema/postgresql/v12/visibility/versioned
+          resources:
+            {{- toYaml .Values.server.schema.resources | nindent 12 }}
+      containers:
+        - name: temporal-server
+          image: {{ include "toxindex.image" (dict "root" $ "name" "temporal-server") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" . | nindent 12 }}
+          env:
+            - name: DB
+              value: postgres12
+            - name: DB_PORT
+              value: "5432"
+            - name: POSTGRES_SEEDS
+              value: {{ .Values.postgres.host | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: POSTGRES_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.passwordSecret }}
+                  key: password
+            - name: DBNAME
+              value: {{ .Values.postgres.database | quote }}
+            - name: VISIBILITY_DBNAME
+              value: {{ .Values.postgres.visibilityDatabase | quote }}
+            - name: PROMETHEUS_ENDPOINT
+              value: "0.0.0.0:{{ .Values.server.metricsPort }}"
+          ports:
+            - name: grpc
+              containerPort: 7233
+            - name: metrics
+              containerPort: {{ .Values.server.metricsPort }}
+          readinessProbe:
+            tcpSocket:
+              port: 7233
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          startupProbe:
+            tcpSocket:
+              port: 7233
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: 7233
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}

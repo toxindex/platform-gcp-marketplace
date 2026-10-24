@@ -1,0 +1,3 @@
+{{- if hasKey (.Values.sysrev | default dict) "enabled" }}
+{{- fail "sysrev.enabled is not a valid key: sysrev is gated on global.sysrev.enabled so the subchart condition and the SYSREV_API_URL the sage control plane mounts its proxy and SPA on cannot disagree; move the override to global.sysrev.enabled" }}
+{{- end }}

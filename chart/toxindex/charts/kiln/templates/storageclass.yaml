@@ -6,4 +6,5 @@ metadata:
 provisioner: {{ .Values.ssdStorage.provisioner }}
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 {{- end }}

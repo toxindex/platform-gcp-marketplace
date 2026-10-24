@@ -24,14 +24,16 @@ spec:
           securityContext:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "kiln-resolver") | nindent 12 }}
             - name: CLICKHOUSE_URL
-              value: "http://kiln-clickhouse:8123"
+              value: {{ include "toxindex.upstream.kilnQuery" . | quote }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
           ports:
             - containerPort: 8080
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
           livenessProbe:
             httpGet:
               path: /healthz

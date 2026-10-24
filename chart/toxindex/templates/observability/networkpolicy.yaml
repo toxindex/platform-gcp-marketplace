@@ -2,26 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: default-deny-ingress
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
-  labels:
-    app.kubernetes.io/name: default-deny-ingress
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: network-policy
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-otlp-ingress
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: otel-collector
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: network-policy
+    {{- include "toxindex.labels" (dict "name" "otel-collector" "release" $.Release.Name "partOf" "observability" "component" "network-policy") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -41,9 +25,7 @@ metadata:
   name: allow-observability-internal
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: allow-observability-internal
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: network-policy
+    {{- include "toxindex.labels" (dict "name" "allow-observability-internal" "release" $.Release.Name "partOf" "observability" "component" "network-policy") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:

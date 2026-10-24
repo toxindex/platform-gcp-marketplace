@@ -1,0 +1,5 @@
+apiVersion: v2
+name: temporal
+version: 0.1.0
+description: Shared Temporal service for ToxIndex workloads
+type: application

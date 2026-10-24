@@ -1,13 +1,14 @@
 {{- if and .Values.observability.enabled .Values.observability.backend.enabled }}
+{{- $alerting := .Values.observability.alerting | default dict -}}
+{{- $default := $alerting.webhookUrl -}}
+{{- $critical := $alerting.criticalWebhookUrl | default $alerting.webhookUrl -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: alertmanager
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: alertmanager
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: alerting
+    {{- include "toxindex.labels" (dict "name" "alertmanager" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 4 }}
 data:
   alertmanager.yml: |
     global:
@@ -28,8 +29,23 @@ data:
           receiver: critical
     receivers:
       - name: default
+        {{- with $default }}
+        webhook_configs:
+          - url: {{ . | quote }}
+            send_resolved: true
+        {{- end }}
       - name: license
+        {{- with $default }}
+        webhook_configs:
+          - url: {{ . | quote }}
+            send_resolved: true
+        {{- end }}
       - name: critical
+        {{- with $critical }}
+        webhook_configs:
+          - url: {{ . | quote }}
+            send_resolved: true
+        {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -37,9 +53,7 @@ metadata:
   name: alertmanager
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: alertmanager
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: alerting
+    {{- include "toxindex.labels" (dict "name" "alertmanager" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 4 }}
 spec:
   replicas: 1
   strategy:
@@ -54,9 +68,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: alertmanager
-        app.kubernetes.io/part-of: observability
-        app.kubernetes.io/component: alerting
+        {{- include "toxindex.labels" (dict "name" "alertmanager" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 8 }}
     spec:
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65534) | nindent 8 }}
@@ -77,10 +89,7 @@ spec:
               readOnly: true
             - name: data
               mountPath: /alertmanager
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
+          {{- include "toxindex.preStopDrain" . | nindent 10 }}
           readinessProbe:
             httpGet:
               path: /-/ready
@@ -112,9 +121,7 @@ metadata:
   name: alertmanager
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: alertmanager
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: alerting
+    {{- include "toxindex.labels" (dict "name" "alertmanager" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 4 }}
 spec:
   selector:
     app.kubernetes.io/name: alertmanager

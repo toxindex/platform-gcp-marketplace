@@ -1,0 +1,17 @@
+{{- $_ := required "temporal: server.hostPort is required" .Values.server.hostPort -}}
+{{- $_ = required "temporal: postgres.host is required" .Values.postgres.host -}}
+{{- $_ = required "temporal: postgres.passwordSecret is required" .Values.postgres.passwordSecret -}}
+{{- $_ = required "temporal: postgres.user is required" .Values.postgres.user -}}
+{{- $_ = required "temporal: postgres.database is required" .Values.postgres.database -}}
+{{- $_ = required "temporal: postgres.visibilityDatabase is required" .Values.postgres.visibilityDatabase -}}
+{{- if eq .Values.postgres.database .Values.postgres.visibilityDatabase -}}
+{{- fail "temporal: postgres.database and postgres.visibilityDatabase must differ — Temporal keeps history and visibility in separate schemas and migrating both into one database corrupts it" -}}
+{{- end -}}
+{{- if not .Values.namespaces -}}
+{{- fail "temporal: namespaces must contain at least one Temporal namespace" -}}
+{{- end -}}
+{{- range .Values.namespaces -}}
+{{- if or (not (kindIs "string" .)) (not (regexMatch "^[a-z][a-z0-9-]{0,62}$" (toString .))) -}}
+{{- fail "temporal: namespaces must be lowercase names of 1-63 letters, digits, or hyphens, beginning with a letter" -}}
+{{- end -}}
+{{- end -}}

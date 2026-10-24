@@ -5,9 +5,7 @@ metadata:
   name: vmalert-rules
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: vmalert
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: alerting
+    {{- include "toxindex.labels" (dict "name" "vmalert" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 4 }}
 data:
   rules.yaml: |
     groups:
@@ -85,10 +83,94 @@ data:
             annotations:
               summary: Job failed
               description: A Kubernetes Job reported a failed completion.
+      {{- if .Values.temporal.enabled }}
+      - name: temporal
+        rules:
+          - alert: TemporalPersistenceFailing
+            expr: sum(rate(persistence_error_with_type{error_type="serviceerror_Unavailable"}[5m])) > 0
+            for: 5m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Temporal cannot reach its datastore
+              description: The workflow engine cannot reach its datastore, so no workflow is advancing. The server stays Ready through a total outage, so nothing else will catch this. Check the database it is pointed at, and the Cloud SQL proxy if one is in front of it.
+          - alert: TemporalMetricsDown
+            expr: up{job="temporal-server"} == 0
+            for: 10m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: Temporal metrics unavailable
+              description: The collector cannot scrape the workflow engine, so persistence health is unobservable and TemporalPersistenceFailing is blind.
+      {{- end }}
+      {{- if .Values.flow.enabled }}
+      - name: flow
+        rules:
+          - alert: FlowRunsFailing
+            expr: sum(rate(flow_runs_finished{outcome="failed"}[15m])) / sum(rate(flow_runs_finished[15m])) > 0.5
+            for: 15m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Most pipeline runs are failing
+              description: Over half the runs that finished in the last 15 minutes failed. A single failed run is ordinary; a sustained majority means a step or an upstream is broken for everyone. The flow step failed log entries name the step type and carry the error. Being a ratio, this stays quiet when nobody is running anything.
+          - alert: FlowStepFailing
+            expr: sum by (step_type) (rate(flow_step_duration_count{status="failed"}[15m])) > 0.05
+            for: 15m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: A pipeline step type keeps failing
+              description: One step type has failed about three times a minute for 15 minutes; the alert labels name it. Steps retry, so this fires while runs may still be succeeding — it is the earliest sign that an upstream has gone bad.
+          - alert: FlowWorkNotStarting
+            expr: histogram_quantile(0.95, sum by (le) (rate(temporal_activity_schedule_to_start_latency_bucket[10m]))) > 300
+            for: 10m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Pipeline work is queued but not starting
+              description: Activities wait over five minutes between being scheduled and being picked up, so runs are queued rather than running. The workers are alive — a dead one fires FlowWorkerAbsent instead — but too few, wedged on a saturated upstream, or polling a queue nothing serves.
+          - alert: FlowWorkerAbsent
+            expr: absent(temporal_worker_task_slots_available)
+            for: 10m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: No flow worker is polling for work
+              description: No worker has reported a task slot for ten minutes, so no run can advance. Runs are accepted and sit there rather than failing, which is why no failure alert fires in this state. This is the dead-man for every other flow alert.
+      {{- end }}
+      {{- if .Values.global.gpu.runtimeClassName }}
+      - name: gpu
+        rules:
+          - alert: GpuCapacityAbsent
+            expr: absent(kube_node_status_allocatable{resource="nvidia_com_gpu"}) or max(kube_node_status_allocatable{resource="nvidia_com_gpu"}) == 0
+            for: 15m
+            labels:
+              severity: critical
+              category: platform
+            annotations:
+              summary: Cluster is advertising no GPUs
+              description: No node offers an allocatable GPU, so every rig that needs one stays Pending rather than failing. The device plugin reports capacity from the driver, so this is the first thing that goes when the driver stack on the node breaks.
+          - alert: GpuMetricsDown
+            expr: up{job="dcgm-exporter"} == 0
+            for: 10m
+            labels:
+              severity: warning
+              category: platform
+            annotations:
+              summary: GPU metrics unavailable
+              description: The collector cannot scrape dcgm-exporter, so GPU health is unobservable. The exporter initializes against the driver at start, so it fails to come back after a driver change the node has not rebooted into.
+      {{- end }}
       - name: platform-control-plane
         rules:
           - alert: RolloutStalled
-            expr: kube_deployment_status_condition{type="Progressing", status="false", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1
+            expr: kube_deployment_status_condition{condition="Progressing", status="false", namespace!~"{{ .Values.observability.excludeNamespaceRegex }}"} == 1
             for: 10m
             labels:
               severity: critical
@@ -123,6 +205,9 @@ data:
             annotations:
               summary: Flux metrics unavailable
               description: The collector cannot scrape Flux controllers; delivery health is unobservable.
+      {{- with .Values.observability.backend.extraRuleGroups }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -130,9 +215,7 @@ metadata:
   name: vmalert
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: vmalert
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: alerting
+    {{- include "toxindex.labels" (dict "name" "vmalert" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 4 }}
 spec:
   replicas: 1
   strategy:
@@ -147,9 +230,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: vmalert
-        app.kubernetes.io/part-of: observability
-        app.kubernetes.io/component: alerting
+        {{- include "toxindex.labels" (dict "name" "vmalert" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 8 }}
     spec:
       containers:
         - name: vmalert
@@ -168,10 +249,7 @@ spec:
             - name: rules
               mountPath: /etc/alerts
               readOnly: true
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", "5"]
+          {{- include "toxindex.preStopDrain" . | nindent 10 }}
           readinessProbe:
             httpGet:
               path: /health

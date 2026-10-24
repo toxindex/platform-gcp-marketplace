@@ -1,0 +1,66 @@
+{{- if and .Values.observability.enabled .Values.global.gpu.runtimeClassName }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dcgm-exporter
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  annotations:
+    ignore-check.kube-linter.io/privilege-escalation-container: "DCGM reads GPU device state through SYS_ADMIN"
+    ignore-check.kube-linter.io/drop-net-raw-capability: "the NVIDIA image sets its own capability list"
+  labels:
+    {{- include "toxindex.labels" (dict "name" "dcgm-exporter" "release" $.Release.Name "partOf" "observability" "component" "gpu-metrics") | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dcgm-exporter
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "toxindex.labels" (dict "name" "dcgm-exporter" "release" $.Release.Name "partOf" "observability" "component" "gpu-metrics") | nindent 8 }}
+    spec:
+      {{- include "toxindex.gpuScheduling" . | nindent 6 }}
+      containers:
+        - name: dcgm-exporter
+          image: {{ include "toxindex.image" (dict "root" $ "name" "dcgm-exporter") | quote }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              add: ["SYS_ADMIN"]
+          env:
+            - name: DCGM_EXPORTER_LISTEN
+              value: ":9400"
+            - name: DCGM_EXPORTER_KUBERNETES
+              value: "true"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: all
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: compute,utility
+          ports:
+            - name: metrics
+              containerPort: 9400
+          volumeMounts:
+            - name: pod-resources
+              mountPath: /var/lib/kubelet/pod-resources
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          {{- with .Values.observability.dcgmResources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: pod-resources
+          hostPath:
+            path: /var/lib/kubelet/pod-resources
+{{- end }}

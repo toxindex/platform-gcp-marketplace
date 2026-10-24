@@ -5,9 +5,7 @@ metadata:
   name: victoria-metrics
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: victoria-metrics
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: database
+    {{- include "toxindex.labels" (dict "name" "victoria-metrics" "release" $.Release.Name "partOf" "observability" "component" "database") | nindent 4 }}
 spec:
   serviceName: victoria-metrics
   replicas: 1
@@ -19,9 +17,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: victoria-metrics
-        app.kubernetes.io/part-of: observability
-        app.kubernetes.io/component: database
+        {{- include "toxindex.labels" (dict "name" "victoria-metrics" "release" $.Release.Name "partOf" "observability" "component" "database") | nindent 8 }}
     spec:
       containers:
         - name: victoria-metrics
@@ -56,9 +52,7 @@ spec:
     - metadata:
         name: storage
         labels:
-          app.kubernetes.io/name: victoria-metrics
-          app.kubernetes.io/part-of: observability
-          app.kubernetes.io/component: database
+          {{- include "toxindex.labels" (dict "name" "victoria-metrics" "release" $.Release.Name "partOf" "observability" "component" "database") | nindent 10 }}
       spec:
         accessModes: [ReadWriteOnce]
         {{- with .Values.observability.backend.storage.class }}
@@ -74,9 +68,7 @@ metadata:
   name: victoria-metrics
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: victoria-metrics
-    app.kubernetes.io/part-of: observability
-    app.kubernetes.io/component: database
+    {{- include "toxindex.labels" (dict "name" "victoria-metrics" "release" $.Release.Name "partOf" "observability" "component" "database") | nindent 4 }}
 spec:
   selector:
     app.kubernetes.io/name: victoria-metrics

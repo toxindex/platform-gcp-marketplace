@@ -1,19 +1,9 @@
 {{- define "sage.labels" -}}
-app.kubernetes.io/name: {{ .name }}
-app.kubernetes.io/instance: {{ .release }}
-app.kubernetes.io/part-of: sage
-app.kubernetes.io/component: {{ .component }}
+{{- include "toxindex.labels" (dict "name" .name "release" .release "partOf" "sage" "component" .component) -}}
 {{- end }}
 
 {{- define "sage.selectorLabels" -}}
-app.kubernetes.io/name: {{ .name }}
-{{- end }}
-
-{{- define "sage.fileStoreEnv" -}}
-{{- with .root.Values.fileStore.bucket }}
-- name: GCS_BUCKET
-  value: {{ . | quote }}
-{{- end }}
+{{- include "toxindex.selectorLabels" (dict "name" .name) -}}
 {{- end }}
 
 {{- define "sage.migrateDbEnv" -}}
@@ -42,3 +32,20 @@ app.kubernetes.io/name: {{ .name }}
 - name: DATABASE_URL
   value: "postgres://sage_app:$(APP_PASSWORD)@{{ .root.Values.postgres.host }}:5432/sage?sslmode=disable"
 {{- end }}
+
+{{- define "sage.blobDir" -}}/var/lib/sage{{- end }}
+
+{{- define "sage.blobsOnDisk" -}}
+{{- if not .Values.fileStore.bucket -}}true{{- end -}}
+{{- end -}}
+
+{{- define "sage.rolloutStrategy" -}}
+{{- if include "sage.blobsOnDisk" . -}}
+type: Recreate
+{{- else -}}
+type: RollingUpdate
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+{{- end -}}
+{{- end -}}

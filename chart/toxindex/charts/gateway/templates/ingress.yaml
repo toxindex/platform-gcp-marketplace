@@ -6,9 +6,14 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "gateway.labels" (dict "name" "gateway" "component" "auth-proxy" "release" $.Release.Name) | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- if or .Values.ingress.annotations .Values.frontendConfig.sslPolicy }}
   annotations:
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.frontendConfig.sslPolicy }}
+    networking.gke.io/v1beta1.FrontendConfig: gateway
+    {{- end }}
   {{- end }}
 spec:
   {{- with .Values.ingress.className }}

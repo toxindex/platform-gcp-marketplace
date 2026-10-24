@@ -11,4 +11,14 @@ data:
     <clickhouse>
         <listen_host>0.0.0.0</listen_host>
     </clickhouse>
+  memory.xml: |
+    <clickhouse>
+        <max_server_memory_usage_to_ram_ratio>0.8</max_server_memory_usage_to_ram_ratio>
+    </clickhouse>
+  access.xml: |
+    <clickhouse>
+        <access_control_improvements>
+            <users_without_row_policies_can_read_rows>true</users_without_row_policies_can_read_rows>
+        </access_control_improvements>
+    </clickhouse>
 {{- end }}

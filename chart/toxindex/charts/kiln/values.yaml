@@ -4,7 +4,6 @@ networkPolicy:
 clickhouse:
   enabled: true
   loaderPasswordSecret: kiln-clickhouse-loader-password
-  loaderPasswordRemoteSecret: ""
   resources:
     requests:
       cpu: 250m
@@ -12,22 +11,65 @@ clickhouse:
     limits:
       memory: 6Gi
   storage:
-    class: ""
     size: 20Gi
   tailscale:
     expose: false
     hostname: tidx-clickhouse
 
+query:
+  enabled: true
+  credentialsSecret: kiln-query-credentials
+  tailscale:
+    expose: false
+    hostname: tidx-kiln-query
+
 resolver:
   enabled: true
 
+sparql:
+  enabled: true
+  javaOptions: -Xmx1g -Dserver.max-http-request-header-size=65536 -Dserver.max-http-header-size=65536
+  resources:
+    requests:
+      cpu: 200m
+      memory: 2Gi
+    limits:
+      memory: 2Gi
+  tailscale:
+    expose: false
+    hostname: tidx-sparql
+
+fts:
+  enabled: true
+  intervalSeconds: 60
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  storage:
+    size: 20Gi
+  tailscale:
+    expose: false
+    hostname: tidx-kiln-fts
+
 loader:
   enabled: true
-  maxTables: ""
+  excludeBricks: []
+  storageHeadroom: 2.0
 
 remoteClickhouse:
   enabled: false
-  tailnetFqdn: ""
+
+remoteFts:
+  enabled: false
+
+remoteSparql:
+  enabled: false
+
+remoteQuery:
+  enabled: false
 
 ssdStorage:
   enabled: false

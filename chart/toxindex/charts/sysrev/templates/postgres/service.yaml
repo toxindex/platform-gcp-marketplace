@@ -1,0 +1,15 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sysrev-postgres
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-postgres" "component" "database" "release" $.Release.Name) | nindent 4 }}
+spec:
+  selector:
+    {{- include "sysrev.selectorLabels" (dict "name" "sysrev-postgres") | nindent 4 }}
+  ports:
+    - port: 5432
+      targetPort: 5432
+{{- end }}

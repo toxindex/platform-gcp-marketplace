@@ -1,0 +1,5 @@
+apiVersion: v2
+name: git
+version: 0.1.0
+description: Git repository hosting served by git-engine
+type: application

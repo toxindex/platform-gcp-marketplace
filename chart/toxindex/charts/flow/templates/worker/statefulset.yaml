@@ -1,0 +1,142 @@
+{{- if .Values.worker.enabled }}
+{{- $slots := list (dict
+      "name" "flow-worker"
+      "build" (include "toxindex.imageTag" (dict "root" $ "name" "flow-worker"))
+      "image" (include "toxindex.image" (dict "root" $ "name" "flow-worker"))
+      "current" true) -}}
+{{- with .Values.worker.previous.tag -}}
+{{- $repo := printf "%s/%s" $.Values.global.registry "flow-worker" -}}
+{{- $digest := required "worker.previous.digest is required when worker.previous.tag is set" $.Values.worker.previous.digest -}}
+{{- $ref := printf "%s:%s@%s" $repo (toString .) (toString $digest) -}}
+{{- $slots = append $slots (dict
+      "name" (printf "flow-worker-%s" (toString .))
+      "build" (toString .)
+      "image" $ref
+      "current" false) -}}
+{{- end -}}
+{{- range $slot := $slots }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $slot.name }}
+  namespace: {{ $.Values.global.namespace | default $.Release.Namespace }}
+  labels:
+    {{- include "flow.labels" (dict "name" $slot.name "component" "worker" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: {{ $.Values.worker.replicas }}
+  serviceName: {{ $slot.name }}
+  updateStrategy:
+    type: RollingUpdate
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      {{- include "flow.selectorLabels" (dict "name" $slot.name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "flow.labels" (dict "name" $slot.name "component" "worker" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ $.Values.worker.drainSeconds }}
+      serviceAccountName: flow-worker
+      {{- if not $.Values.engine.artifactStore.bucket }}
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  {{- include "flow.selectorLabels" (dict "name" "flow-engine") | nindent 18 }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      initContainers:
+        - name: wait-for-temporal-namespace
+          image: {{ include "toxindex.image" (dict "root" $ "name" "temporal-admin-tools") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              until temporal operator namespace describe --address {{ include "toxindex.upstream.temporal" $ | quote }} --namespace {{ $.Values.engine.temporal.namespace | quote }} >/dev/null 2>&1; do
+                echo "waiting for temporal namespace {{ $.Values.engine.temporal.namespace }}"
+                sleep 5
+              done
+      containers:
+        - name: flow-worker
+          image: {{ $slot.image | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "flow-worker") | nindent 12 }}
+            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "flow.dbEnv" (dict "root" $) | nindent 12 }}
+            - name: TOXJOBS_URL
+              value: {{ include "toxindex.upstream.toxjobs" $ | quote }}
+            - name: KILN_CLICKHOUSE_URL
+              value: {{ include "toxindex.upstream.kilnQuery" $ | quote }}
+            - name: KILN_FTS_URL
+              value: {{ include "toxindex.upstream.kilnFts" $ | quote }}
+            - name: GIT_ENGINE_URL
+              value: {{ include "toxindex.upstream.gitEngine" $ | quote }}
+            - name: TEMPORAL_HOST_PORT
+              value: {{ include "toxindex.upstream.temporal" $ | quote }}
+            - name: TEMPORAL_NAMESPACE
+              value: {{ $.Values.engine.temporal.namespace | quote }}
+            - name: FLOW_BUILD_ID
+              value: {{ $slot.build | quote }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.proxyAuthSecret }}
+                  key: proxy-auth
+            {{- include "toxindex.blobStoreEnv" $.Values.engine.artifactStore | nindent 12 }}
+            - name: VERTEX_PROJECT
+              value: {{ $.Values.engine.vertex.project | default "" | quote }}
+            - name: VERTEX_REGION
+              value: {{ $.Values.engine.vertex.region | quote }}
+            {{- with $.Values.engine.vertex.credentialsSecret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/key.json
+            {{- end }}
+          volumeMounts:
+            {{- if not $.Values.engine.artifactStore.bucket }}
+            - name: artifacts
+              mountPath: {{ $.Values.engine.artifactStore.dir }}
+            {{- end }}
+            {{- with $.Values.engine.vertex.credentialsSecret }}
+            - name: gcp-credentials
+              mountPath: /var/secrets/gcp
+              readOnly: true
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml $.Values.worker.resources | nindent 12 }}
+      volumes:
+        {{- if not $.Values.engine.artifactStore.bucket }}
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: flow-artifacts
+        {{- end }}
+        {{- with $.Values.engine.vertex.credentialsSecret }}
+        - name: gcp-credentials
+          secret:
+            secretName: {{ . }}
+        {{- end }}
+{{- end }}
+{{- end }}

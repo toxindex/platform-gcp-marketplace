@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sysrev
+version: 0.1.0
+description: Auditable systematic review served by sysrev-api
+type: application

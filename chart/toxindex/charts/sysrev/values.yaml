@@ -1,0 +1,37 @@
+networkPolicy:
+  enabled: true
+
+postgres:
+  enabled: true
+  host: sysrev-postgres
+  passwordSecret: sysrev-postgres-password
+  appPasswordSecret: sysrev-app-password
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  storage:
+    size: 10Gi
+
+api:
+  enabled: true
+  serviceAccount:
+    gcpServiceAccount:
+  blobStore:
+    bucket:
+  storage:
+    size: 20Gi
+  vertex:
+    region: global
+  tailscale:
+    expose: false
+    hostname: tidx-sysrev-api
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+remoteApi:
+  enabled: false

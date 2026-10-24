@@ -21,19 +21,25 @@ spec:
     spec:
       restartPolicy: Always
       enableServiceLinks: false
-      initContainers:
-        - name: wait-for-clickhouse
-          image: {{ include "toxindex.image" (dict "root" $ "name" "clickhouse") | quote }}
-          command:
-            - sh
-            - -c
-            - until clickhouse-client --host kiln-clickhouse --port 9000 -q 'SELECT 1'; do echo "waiting for clickhouse"; sleep 2; done
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 101 "gid" 101) | nindent 8 }}
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 18 }}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: loader
           image: {{ include "toxindex.image" (dict "root" $ "name" "kiln-loader") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           env:
-            - name: CLICKHOUSE_HOST
-              value: kiln-clickhouse
+            - name: CLICKHOUSE_URL
+              value: {{ include "toxindex.upstream.kilnClickhouse" . | quote }}
+            - name: CLICKHOUSE_DATA
+              value: /var/lib/clickhouse
             - name: CLICKHOUSE_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -45,22 +51,56 @@ spec:
               value: {{ $dataset.version | quote }}
             - name: GCS_TOKEN_FILE
               value: /etc/dataset/token
+            - name: DATASET_UNITS_FILE
+              value: /etc/dataset/units
+            {{- with .Values.loader.excludeBricks }}
+            - name: DATASET_EXCLUDE_BRICKS
+              value: {{ join "," . | quote }}
+            {{- end }}
+            - name: DATASET_STORAGE_HEADROOM
+              value: {{ required "kiln: loader.storageHeadroom is required" .Values.loader.storageHeadroom | quote }}
+            - name: LICENSE_FILE
+              value: /etc/license/license
+            - name: LICENSE_BROKER_URL
+              value: {{ .Values.global.license.brokerUrl | quote }}
             {{- with .Values.loader.maxTables }}
             - name: DATASET_MAX_TABLES
               value: {{ . | quote }}
             {{- end }}
           volumeMounts:
+            - name: clickhouse-data
+              mountPath: /var/lib/clickhouse
             - name: dataset-token
               mountPath: /etc/dataset
               readOnly: true
+            - name: license
+              mountPath: /etc/license
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: 8080
           readinessProbe:
-            exec:
-              command: ["sh", "-c", "test -f /tmp/loader-ready"]
+            httpGet:
+              path: /readyz
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
       volumes:
+        - name: clickhouse-data
+          persistentVolumeClaim:
+            claimName: data-kiln-clickhouse-0
         - name: dataset-token
           secret:
             secretName: {{ include "toxindex.license.datasetSecret" (dict "root" $ "name" "kiln") }}
+            optional: true
+        - name: license
+          secret:
+            secretName: {{ include "toxindex.license.secret" (dict "root" $) }}
             optional: true
 {{- end }}

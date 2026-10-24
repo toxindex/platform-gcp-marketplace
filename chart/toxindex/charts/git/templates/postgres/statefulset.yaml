@@ -1,0 +1,62 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: git-postgres
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "git.labels" (dict "name" "git-postgres" "component" "database" "release" $.Release.Name) | nindent 4 }}
+spec:
+  serviceName: git-postgres
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "git.selectorLabels" (dict "name" "git-postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "git.labels" (dict "name" "git-postgres" "component" "database" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
+          env:
+            - name: POSTGRES_DB
+              value: git
+            - name: POSTGRES_USER
+              value: git
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.passwordSecret }}
+                  key: password
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          {{- with .Values.postgres.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "git"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.postgres.storage.class }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage.size }}
+{{- end }}

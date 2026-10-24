@@ -1,0 +1,121 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sysrev-api
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "sysrev.labels" (dict "name" "sysrev-api" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    {{- if .Values.api.blobStore.bucket }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+    {{- else }}
+    type: Recreate
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "sysrev.selectorLabels" (dict "name" "sysrev-api") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sysrev.labels" (dict "name" "sysrev-api" "component" "backend" "release" $.Release.Name) | nindent 8 }}
+    spec:
+      serviceAccountName: sysrev-api
+      securityContext:
+        {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+        fsGroup: 65532
+      initContainers:
+        {{- if .Values.postgres.enabled }}
+        - name: wait-for-postgres
+          image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              elapsed=0
+              until pg_isready -h {{ .Values.postgres.host }} -p 5432 -U sysrev; do
+                elapsed=$((elapsed + 2))
+                if [ "$elapsed" -ge 120 ]; then
+                  echo "timed out waiting for postgres" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+        {{- end }}
+        - name: migrate
+          image: {{ include "toxindex.image" (dict "root" $ "name" "sysrev-db") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          env:
+            {{- include "sysrev.migrateDbEnv" (dict "root" $) | nindent 12 }}
+      containers:
+        - name: sysrev-api
+          image: {{ include "toxindex.image" (dict "root" $ "name" "sysrev-api") | quote }}
+          securityContext:
+            {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          env:
+            {{- include "toxindex.otelEnv" (dict "root" $ "name" "sysrev-api") | nindent 12 }}
+            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "sysrev.dbEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.api.blobStore.bucket "signerServiceAccount" .Values.api.serviceAccount.gcpServiceAccount "dir" (include "sysrev.blobDir" .)) | nindent 12 }}
+            - name: VERTEX_PROJECT
+              value: {{ .Values.api.vertex.project | default "" | quote }}
+            - name: VERTEX_REGION
+              value: {{ .Values.api.vertex.region | quote }}
+            - name: PROXY_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.proxyAuthSecret }}
+                  key: proxy-auth
+            {{- with .Values.api.vertex.credentialsSecret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/key.json
+            {{- end }}
+          volumeMounts:
+            {{- if not .Values.api.blobStore.bucket }}
+            - name: blobs
+              mountPath: {{ include "sysrev.blobDir" . }}
+            {{- end }}
+            {{- with .Values.api.vertex.credentialsSecret }}
+            - name: gcp-credentials
+              mountPath: /var/secrets/gcp
+              readOnly: true
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- if or (not .Values.api.blobStore.bucket) .Values.api.vertex.credentialsSecret }}
+      volumes:
+        {{- if not .Values.api.blobStore.bucket }}
+        - name: blobs
+          persistentVolumeClaim:
+            claimName: sysrev-blobs
+        {{- end }}
+        {{- with .Values.api.vertex.credentialsSecret }}
+        - name: gcp-credentials
+          secret:
+            secretName: {{ . }}
+        {{- end }}
+      {{- end }}
+{{- end }}

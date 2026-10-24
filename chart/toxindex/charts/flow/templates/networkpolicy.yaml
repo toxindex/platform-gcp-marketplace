@@ -1,15 +1,4 @@
 {{- if .Values.networkPolicy.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: flow-default-deny-ingress
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
-  labels:
-    {{- include "flow.labels" (dict "name" "flow-default-deny-ingress" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
 {{- if .Values.engine.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
@@ -63,7 +52,14 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/part-of: crawler
+              app.kubernetes.io/part-of: temporal
+      ports:
+        - protocol: TCP
+          port: 7233
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: git
       ports:
         - protocol: TCP
           port: 8080
@@ -80,7 +76,7 @@ spec:
               app.kubernetes.io/part-of: kiln
       ports:
         - protocol: TCP
-          port: 8123
+          port: 8080
     - to:
         - podSelector:
             matchLabels:
@@ -96,7 +92,7 @@ spec:
         - protocol: TCP
           port: 8080
         - protocol: TCP
-          port: 8123
+          port: 80
     - ports:
         - protocol: TCP
           port: 443

@@ -1,0 +1,46 @@
+{{- define "temporal.namespaceProvisionerSpec" -}}
+{{- $image := include "toxindex.image" (dict "root" $ "name" "temporal-admin-tools") -}}
+backoffLimit: 5
+template:
+  metadata:
+    labels:
+      {{- include "temporal.labels" (dict "name" "temporal-namespace-provisioner" "component" "namespace-provisioner" "release" $.Release.Name) | nindent 8 }}
+  spec:
+    restartPolicy: Never
+    automountServiceAccountToken: false
+    securityContext:
+      {{- include "toxindex.podSecurityContext" (dict "uid" 1000 "gid" 1000) | nindent 8 }}
+    containers:
+      - name: temporal-namespace-provisioner
+        image: {{ $image | quote }}
+        securityContext:
+          {{- include "toxindex.containerSecurityContext" . | nindent 12 }}
+        command:
+          - sh
+          - -ec
+          - |
+            elapsed=0
+            until temporal operator cluster health --address {{ .Values.server.hostPort | quote }} >/dev/null 2>&1; do
+              elapsed=$((elapsed + 2))
+              if [ "$elapsed" -ge 300 ]; then
+                echo "timed out waiting for temporal at {{ .Values.server.hostPort }}" >&2
+                exit 1
+              fi
+              sleep 2
+            done
+            {{- range .Values.namespaces }}
+            temporal operator namespace describe --address {{ $.Values.server.hostPort | quote }} --namespace {{ . | quote }} >/dev/null 2>&1 || temporal operator namespace create --address {{ $.Values.server.hostPort | quote }} --namespace {{ . | quote }} || temporal operator namespace describe --address {{ $.Values.server.hostPort | quote }} --namespace {{ . | quote }} >/dev/null
+            {{- end }}
+        resources:
+          {{- toYaml .Values.namespaceProvisioner.resources | nindent 12 }}
+{{- end -}}
+{{- $spec := include "temporal.namespaceProvisionerSpec" . -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-namespace-provisioner-{{ $spec | sha256sum | trunc 10 }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "temporal.labels" (dict "name" "temporal-namespace-provisioner" "component" "namespace-provisioner" "release" $.Release.Name) | nindent 4 }}
+spec:
+  {{- $spec | nindent 2 }}

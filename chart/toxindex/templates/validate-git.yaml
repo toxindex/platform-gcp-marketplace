@@ -1,0 +1,4 @@
+{{- $git := .Values.git | default dict }}
+{{- if and (hasKey $git "enabled") (not $git.enabled) }}
+{{- fail "git.enabled: false leaves the sage control plane proxying /api/git at nothing and flow-engine with no repositories to serve; git-engine hosts every repository the platform keeps, so it cannot be switched off" }}
+{{- end }}

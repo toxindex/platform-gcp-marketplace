@@ -1,0 +1,11 @@
+{{- $auth := .Values.global.auth }}
+{{- if not (has $auth (list "gateway" "single-user")) }}
+{{- fail (printf "global.auth must be \"gateway\" or \"single-user\", got %q: the auth edge decides where the sage control plane gets its principal from, and an unrecognized value has no safe reading" $auth) }}
+{{- end }}
+{{- $oidc := and .Values.gateway.enabled (dig "oidc" "enabled" false .Values.gateway) }}
+{{- if and (eq $auth "gateway") (not $oidc) }}
+{{- fail "global.auth=gateway requires gateway.enabled=true and gateway.oidc.enabled=true: the gateway is what authenticates the user and stamps the X-ToxIndex-* claims the control plane admits on, so there is no principal without it" }}
+{{- end }}
+{{- if and (eq $auth "single-user") $oidc }}
+{{- fail "gateway.oidc.enabled=true requires global.auth=gateway: a single-user edge ignores the gateway's claims and would serve every authenticated user as the same local owner" }}
+{{- end }}

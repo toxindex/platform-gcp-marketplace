@@ -8,15 +8,12 @@ postgres:
   enabled: true
   host: sage-postgres
   passwordSecret: sage-postgres-password
-  passwordRemoteSecret: ""
   appPasswordSecret: sage-app-password
-  appPasswordRemoteSecret: ""
   resources:
     requests:
       cpu: 50m
       memory: 128Mi
   storage:
-    class: ""
     size: 10Gi
 
 agent:
@@ -26,16 +23,16 @@ agent:
       cpu: 50m
       memory: 64Mi
   serviceAccount:
-    gcpServiceAccount: ""
+    gcpServiceAccount:
   vertex:
     project:
     region: global
-    serviceTier: standard
 
 fileStore:
-  bucket: ""
   serviceAccount:
-    gcpServiceAccount: ""
+    gcpServiceAccount:
+  storage:
+    size: 20Gi
 
 controlPlane:
   enabled: true

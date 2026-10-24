@@ -1,0 +1,14 @@
+{
+  "plans": [
+    {
+      "name": "free",
+      "limits": {
+        "sageConversationsPerUserPerDay": 5,
+        "flowRunsPerDay": 2
+      },
+      "rigs": [],
+      "tools": [],
+      "datasets": []
+    }
+  ]
+}

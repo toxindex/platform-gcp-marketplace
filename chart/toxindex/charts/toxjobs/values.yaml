@@ -1,20 +1,26 @@
 networkPolicy:
   enabled: true
-
 manager:
   enabled: true
   rigPort: 8080
+  metricsPort: 9090
   reconcileInterval: 30s
   tailscale:
     expose: false
     hostname: tidx-toxjobs-manager
-  rigAllowlist: []
+  rigGrants:
+    - rig:toxjobs-*
   gpuRigs:
     - toxjobs-reactiont5
+    - toxjobs-pleiome
+    - toxjobs-deeppurpose
+    - toxjobs-esmfold
+  excludeRigs: []
   rigEnv:
     WEB_CONCURRENCY: "1"
     RIG_THREADS: "4"
     RIG_SERIALIZE: "1"
+    RIG_MAX_REQUESTS: "5000"
   resources:
     requests:
       cpu: 250m
@@ -51,7 +57,74 @@ manager:
         limits:
           cpu: "2"
           memory: 8Gi
+      env:
+        RIG_MAX_REQUESTS: "0"
+    # A panel request assembles the profile from the union of its assays' descriptor columns,
+    # so the forest cache converges on the whole 323 MB zoo; measured steady state is ~1.5 GB.
+    toxjobs-pqsar:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+    # torch.load materialises the 2.1 GB checkpoint in host RAM, so peak RSS lands above the
+    # shared 8Gi GPU default. RIG_MAX_REQUESTS=0 avoids recycling into a multi-minute reload.
+    toxjobs-pleiome:
+      resources:
+        requests:
+          cpu: "1"
+          memory: 8Gi
+        limits:
+          cpu: "4"
+          memory: 16Gi
+      env:
+        RIG_MAX_REQUESTS: "0"
+        RIG_TIMEOUT: "600"
+    toxjobs-esmfold:
+      resources:
+        requests:
+          cpu: "2"
+          memory: 16Gi
+        limits:
+          cpu: "4"
+          memory: 32Gi
+          nvidia.com/gpu: 1
+      env:
+        RIG_MAX_REQUESTS: "0"
     toxjobs-admet-ai:
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+        limits:
+          cpu: "2"
+          memory: 8Gi
+    toxjobs-promb:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+      env:
+        RIG_MAX_REQUESTS: "0"
+    # The CYP450 endpoints are 64-model RandomForest ensembles unpickling to ~2 GB per
+    # isozyme, so each tool loads its own family on first call rather than at import.
+    # RIG_MAX_REQUESTS=0 keeps a recycled worker from re-paying that load.
+    toxjobs-ncats-adme:
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+        limits:
+          cpu: "2"
+          memory: 12Gi
+      env:
+        RIG_MAX_REQUESTS: "0"
+    toxjobs-aizynthfinder:
       resources:
         requests:
           cpu: "1"
@@ -91,14 +164,34 @@ manager:
         limits:
           cpu: "2"
           memory: 4Gi
+    toxjobs-trident:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: "2"
+          memory: 3Gi
+      env:
+        OMP_NUM_THREADS: "2"
+    toxjobs-gnina:
+      resources:
+        requests:
+          cpu: "2"
+          memory: 2Gi
+        limits:
+          cpu: "6"
+          memory: 6Gi
+      env:
+        GNINA_CPU: "6"
+        GNINA_TIMEOUT: "600"
+        RIG_TIMEOUT: "900"
   managerResources:
     requests:
-      cpu: 100m
-      memory: 64Mi
-    limits:
       cpu: 250m
-      memory: 128Mi
-
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
 remoteManager:
   enabled: false
-  tailnetFqdn: ""

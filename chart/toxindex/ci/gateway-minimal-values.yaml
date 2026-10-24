@@ -1,0 +1,10 @@
+global:
+  auth: gateway
+
+gateway:
+  oidc:
+    enabled: true
+    issuerUrl: "https://issuer.example.com"
+    clientId: "gateway-minimal"
+    claims:
+      group: "org_id"

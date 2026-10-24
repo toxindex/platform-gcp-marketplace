@@ -1,4 +1,7 @@
 {{- if .Values.clickhouse.enabled }}
+{{- $mem := dig "resources" "limits" "memory" "" .Values.clickhouse }}
+{{- $limit := "" }}
+{{- if $mem }}{{- $limit = include "kiln.quantityToBytes" $mem }}{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,10 +13,55 @@ data:
   readonly.xml: |
     <clickhouse>
         <profiles>
+            <default>
+                <join_use_nulls>1</join_use_nulls>
+                <cancel_http_readonly_queries_on_client_close>1</cancel_http_readonly_queries_on_client_close>
+                {{- if $mem }}
+                <max_memory_usage>{{ mulf $limit 0.6 | int64 }}</max_memory_usage>
+                <max_bytes_before_external_sort>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_sort>
+                <max_bytes_before_external_group_by>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_group_by>
+                <join_algorithm>auto</join_algorithm>
+                <max_bytes_in_join>{{ mulf $limit 0.3 | int64 }}</max_bytes_in_join>
+                <optimize_aggregation_in_order>1</optimize_aggregation_in_order>
+                {{- end }}
+                <max_insert_threads>1</max_insert_threads>
+                <max_insert_block_size>100000</max_insert_block_size>
+                <min_insert_block_size_rows>100000</min_insert_block_size_rows>
+            </default>
             <readonly>
+                <join_use_nulls>1</join_use_nulls>
                 <output_format_json_quote_64bit_integers>0</output_format_json_quote_64bit_integers>
                 <readonly>1</readonly>
+                <max_execution_time>30</max_execution_time>
+                <max_result_rows>1000000</max_result_rows>
+                <max_result_bytes>67108864</max_result_bytes>
+                <result_overflow_mode>throw</result_overflow_mode>
+                {{- if $mem }}
+                <max_memory_usage>{{ mulf $limit 0.6 | int64 }}</max_memory_usage>
+                <max_bytes_before_external_sort>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_sort>
+                <max_bytes_before_external_group_by>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_group_by>
+                <join_algorithm>auto</join_algorithm>
+                <max_bytes_in_join>{{ mulf $limit 0.3 | int64 }}</max_bytes_in_join>
+                <optimize_aggregation_in_order>1</optimize_aggregation_in_order>
+                {{- end }}
             </readonly>
+            <indexer>
+                <join_use_nulls>1</join_use_nulls>
+                <output_format_json_quote_64bit_integers>0</output_format_json_quote_64bit_integers>
+                <readonly>1</readonly>
+                <max_execution_time>600</max_execution_time>
+                <max_result_rows>2000000</max_result_rows>
+                <max_result_bytes>134217728</max_result_bytes>
+                <result_overflow_mode>throw</result_overflow_mode>
+                {{- if $mem }}
+                <max_memory_usage>{{ mulf $limit 0.6 | int64 }}</max_memory_usage>
+                <max_bytes_before_external_sort>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_sort>
+                <max_bytes_before_external_group_by>{{ mulf $limit 0.3 | int64 }}</max_bytes_before_external_group_by>
+                <join_algorithm>auto</join_algorithm>
+                <max_bytes_in_join>{{ mulf $limit 0.3 | int64 }}</max_bytes_in_join>
+                <optimize_aggregation_in_order>1</optimize_aggregation_in_order>
+                {{- end }}
+            </indexer>
         </profiles>
         <users>
             <default>
@@ -27,6 +75,28 @@ data:
                 </networks>
                 <quota>default</quota>
             </loader>
+            <fts_indexer>
+                <password from_env="CLICKHOUSE_FTS_INDEXER_PASSWORD"/>
+                <profile>indexer</profile>
+                <networks>
+                    <ip>::/0</ip>
+                </networks>
+                <quota>default</quota>
+                <grants>
+                    <query>GRANT SELECT ON default.*</query>
+                    <query>GRANT SELECT ON system.tables</query>
+                    <query>GRANT SELECT ON system.columns</query>
+                </grants>
+            </fts_indexer>
+            <gatekeeper>
+                <password from_env="CLICKHOUSE_GATEKEEPER_PASSWORD"/>
+                <profile>default</profile>
+                <networks>
+                    <ip>::/0</ip>
+                </networks>
+                <quota>default</quota>
+                <access_management>1</access_management>
+            </gatekeeper>
         </users>
     </clickhouse>
 {{- end }}

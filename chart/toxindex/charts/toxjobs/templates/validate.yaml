@@ -1,3 +1,8 @@
 {{- if not (or .Values.manager.enabled .Values.remoteManager.enabled) }}
 {{- fail "toxjobs: manager endpoint is unavailable — enable toxjobs.manager.enabled (local) or toxjobs.remoteManager.enabled (remote)" }}
 {{- end }}
+{{- range .Values.manager.excludeRigs }}
+{{- if not (hasKey $.Values.global.images .) }}
+{{- fail (printf "toxjobs: manager.excludeRigs withholds %s, which is not in global.images — drop the line, the rig it named is already gone" .) }}
+{{- end }}
+{{- end }}

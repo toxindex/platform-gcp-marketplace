@@ -1,0 +1,3 @@
+{{- if not .Values.engine.enabled }}
+{{- fail "git: git-engine is required — it hosts every repository the platform serves" }}
+{{- end }}

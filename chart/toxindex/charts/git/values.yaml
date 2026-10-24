@@ -1,0 +1,31 @@
+networkPolicy:
+  enabled: true
+
+postgres:
+  enabled: true
+  host: git-postgres
+  passwordSecret: git-postgres-password
+  appPasswordSecret: git-app-password
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  storage:
+    size: 10Gi
+
+engine:
+  enabled: true
+  repoStore:
+    storage:
+      size: 20Gi
+  serviceAccount:
+    gcpServiceAccount:
+  tailscale:
+    expose: false
+    hostname: tidx-git-engine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 256Mi
