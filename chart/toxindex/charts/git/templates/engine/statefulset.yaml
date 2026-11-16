@@ -27,6 +27,7 @@ spec:
         fsGroup: 65532
         fsGroupChangePolicy: OnRootMismatch
         {{- end }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       initContainers:
         - name: wait-for-postgres
           image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
@@ -60,12 +61,12 @@ spec:
             - containerPort: 8080
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "git-engine") | nindent 12 }}
-            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.namespaceEnv" (dict "root" $) | nindent 12 }}
             {{- include "git.dbEnv" (dict "root" $) | nindent 12 }}
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.global.repoStore.bucket "signerServiceAccount" .Values.engine.serviceAccount.gcpServiceAccount "dir" (include "git.blobDir" .)) | nindent 12 }}
           {{- if include "git.blobsOnDisk" . }}

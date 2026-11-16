@@ -5,14 +5,11 @@ This repository contains the deployment configuration and user guide for
 
 - [User guide](marketplace/docs/user-guide.md)
 - [Helm chart](chart/toxindex)
+- [Terraform for the cluster and Vertex AI](terraform)
 
-## About this repository
+## Support
 
-This repository is a generated mirror of a private source repository. Its
-contents are produced by an automated, reviewed export. Issues and feature
-requests are welcome here; pull requests cannot be merged directly because
-every file is overwritten on the next release export. If you would like to
-contribute a change, open an issue describing it instead.
+To report a problem or request a feature, open an issue in this repository.
 
 ## License
 

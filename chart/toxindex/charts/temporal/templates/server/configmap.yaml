@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temporal-server
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "temporal.labels" (dict "name" "temporal-server" "component" "workflow-engine" "release" $.Release.Name) | nindent 4 }}
+data:
+  dynamicconfig.yaml: |
+    {}

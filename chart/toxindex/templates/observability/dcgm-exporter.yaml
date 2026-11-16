@@ -21,6 +21,7 @@ spec:
         {{- include "toxindex.labels" (dict "name" "dcgm-exporter" "release" $.Release.Name "partOf" "observability" "component" "gpu-metrics") | nindent 8 }}
     spec:
       {{- include "toxindex.gpuScheduling" . | nindent 6 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: dcgm-exporter
           image: {{ include "toxindex.image" (dict "root" $ "name" "dcgm-exporter") | quote }}

@@ -21,6 +21,7 @@ spec:
       serviceAccountName: git-engine
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: set-cors
           image: {{ include "toxindex.image" (dict "root" $ "name" "cloud-sdk") | quote }}

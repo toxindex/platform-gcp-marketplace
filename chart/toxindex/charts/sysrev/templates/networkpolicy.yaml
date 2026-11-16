@@ -23,15 +23,13 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.api.tailscale.expose }}
     - from:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: tailscale
+              app.kubernetes.io/name: sage-control-plane
       ports:
         - protocol: TCP
-          port: 8080
-    {{- end }}
+          port: 8081
   egress:
     - to:
         - namespaceSelector:
@@ -56,12 +54,11 @@ spec:
       ports:
         - protocol: TCP
           port: 4317
-    {{- if or .Values.api.blobStore.bucket .Values.api.vertex.project }}
+    {{- if or .Values.api.blobStore.bucket .Values.api.vertex.project .Values.global.trustedWorkloads }}
     - ports:
         - protocol: TCP
           port: 443
-    {{- else }}
-    {{- include "toxindex.sentryEgress" (dict "root" $) | nindent 4 }}
+    {{- include "toxindex.gcpMetadataEgress" . | nindent 4 }}
     {{- end }}
 {{- end }}
 {{- if .Values.postgres.enabled }}

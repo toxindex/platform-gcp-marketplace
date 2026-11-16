@@ -82,6 +82,7 @@ spec:
       serviceAccountName: kube-state-metrics
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65534) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: kube-state-metrics
           image: {{ include "toxindex.image" (dict "root" $ "name" "kube-state-metrics") | quote }}

@@ -6,11 +6,6 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.clickhouse.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.clickhouse.tailscale.hostname }}
-  {{- end }}
 spec:
   selector:
     {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 4 }}

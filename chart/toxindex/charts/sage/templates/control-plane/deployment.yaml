@@ -38,6 +38,7 @@ spec:
                     {{- include "sage.selectorLabels" (dict "name" "sage-agent") | nindent 20 }}
                 topologyKey: kubernetes.io/hostname
       {{- end }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       initContainers:
         - name: wait-for-postgres
           image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}
@@ -69,10 +70,14 @@ spec:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "sage-control-plane") | nindent 12 }}
-            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.namespaceEnv" (dict "root" $) | nindent 12 }}
             {{- include "toxindex.operatorEnv" (dict "root" $) | nindent 12 }}
             - name: SAGE_AGENT_URL
               value: {{ .Values.controlPlane.agentUrl | quote }}
+            - name: ISSUE_REPORTS_URL
+              value: {{ .Values.controlPlane.issueReportsUrl | quote }}
+            - name: SAGE_ENTITIES
+              value: {{ .Values.controlPlane.entities | quote }}
             - name: KILN_CLICKHOUSE_URL
               value: {{ include "toxindex.upstream.kilnQuery" . | quote }}
             - name: KILN_RESOLVER_URL
@@ -83,32 +88,46 @@ spec:
               value: {{ include "toxindex.upstream.kilnFts" . | quote }}
             - name: FLOW_ENGINE_URL
               value: {{ include "toxindex.upstream.flowEngine" . | quote }}
+            - name: FLOW_METERING_URL
+              value: {{ include "toxindex.upstream.flowMetering" . | quote }}
             - name: GIT_ENGINE_URL
               value: {{ include "toxindex.upstream.gitEngine" . | quote }}
             {{- if .Values.global.sysrev.enabled }}
             - name: SYSREV_API_URL
               value: {{ include "toxindex.upstream.sysrevApi" . | quote }}
+            - name: SYSREV_METERING_URL
+              value: {{ include "toxindex.upstream.sysrevMetering" . | quote }}
             {{- end }}
             - name: TOXJOBS_URL
               value: {{ include "toxindex.upstream.toxjobs" . | quote }}
             - name: AUTH
               value: {{ .Values.global.auth | quote }}
+            - name: GROUP_ADMIN_ROLES
+              value: {{ .Values.global.groupAdminRoles | toJson | quote }}
             - name: BLOB_STORAGE_ORIGIN
               value: {{ .Values.global.storage.host | quote }}
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- include "sage.dbEnv" (dict "root" $) | nindent 12 }}
             {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.fileStore.bucket "signerServiceAccount" .Values.fileStore.serviceAccount.gcpServiceAccount "dir" (include "sage.blobDir" .)) | nindent 12 }}
-          {{- if include "sage.blobsOnDisk" . }}
+            {{- include "toxindex.entitlementsEnv" (dict "root" $) | nindent 12 }}
+            - name: ADMIN_PORT
+              value: "8081"
+            - name: TRUSTED_WORKLOADS
+              value: {{ .Values.global.trustedWorkloads | toJson | quote }}
           volumeMounts:
+            {{- include "toxindex.entitlementsVolumeMount" (dict "root" $) | nindent 12 }}
+          {{- if include "sage.blobsOnDisk" . }}
             - name: blobs
               mountPath: {{ include "sage.blobDir" . }}
           {{- end }}
           ports:
             - containerPort: 8080
+            - name: admin
+              containerPort: 8081
           readinessProbe:
             httpGet:
               path: /healthz
@@ -128,8 +147,9 @@ spec:
               memory: {{ .Values.controlPlane.resources.requests.memory | quote }}
             limits:
               memory: {{ .Values.controlPlane.resources.limits.memory | quote }}
-      {{- if include "sage.blobsOnDisk" . }}
       volumes:
+        {{- include "toxindex.entitlementsVolume" (dict "root" $) | nindent 8 }}
+      {{- if include "sage.blobsOnDisk" . }}
         - name: blobs
           persistentVolumeClaim:
             claimName: sage-blobs

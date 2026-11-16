@@ -29,6 +29,7 @@ spec:
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
         fsGroup: 65532
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       initContainers:
         {{- if .Values.postgres.enabled }}
         - name: wait-for-postgres
@@ -62,19 +63,25 @@ spec:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           ports:
             - containerPort: 8080
+            - name: metering
+              containerPort: 8081
           env:
+            - name: METERING_PORT
+              value: "8081"
+            - name: TRUSTED_WORKLOADS
+              value: {{ .Values.global.trustedWorkloads | toJson | quote }}
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "sysrev-api") | nindent 12 }}
-            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.namespaceEnv" (dict "root" $) | nindent 12 }}
             {{- include "sysrev.dbEnv" (dict "root" $) | nindent 12 }}
             {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.api.blobStore.bucket "signerServiceAccount" .Values.api.serviceAccount.gcpServiceAccount "dir" (include "sysrev.blobDir" .)) | nindent 12 }}
             - name: VERTEX_PROJECT
               value: {{ .Values.api.vertex.project | default "" | quote }}
             - name: VERTEX_REGION
-              value: {{ .Values.api.vertex.region | quote }}
+              value: {{ required "sysrev.api.vertex.region is required: it is the Vertex AI location every model call goes to" .Values.api.vertex.region | quote }}
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- with .Values.api.vertex.credentialsSecret }}
             - name: GOOGLE_APPLICATION_CREDENTIALS

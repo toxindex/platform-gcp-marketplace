@@ -1,3 +1,0 @@
-{{- if and (not .Values.sparql.enabled) .Values.remoteSparql.enabled }}
-{{- include "toxindex.remoteService" (dict "name" "kiln-sparql" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteSparql.tailnetFqdn "labels" (include "kiln.labels" (dict "name" "kiln-sparql" "component" "backend" "release" $.Release.Name))) }}
-{{- end }}

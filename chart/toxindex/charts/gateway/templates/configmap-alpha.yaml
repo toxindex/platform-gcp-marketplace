@@ -30,7 +30,7 @@ data:
           issuerURL: {{ required "gateway: oidc.issuerUrl is required when oidc.enabled" .Values.oidc.issuerUrl | quote }}
           skipDiscovery: false
         {{- $custom := list }}
-        {{- range (list .Values.oidc.claims.group .Values.oidc.claims.user .Values.oidc.claims.groupName .Values.oidc.claims.userName .Values.oidc.claims.email .Values.oidc.claims.groupPersonal) }}
+        {{- range (list .Values.oidc.claims.group .Values.oidc.claims.user .Values.oidc.claims.groupName .Values.oidc.claims.userName .Values.oidc.claims.email .Values.oidc.claims.groupPersonal .Values.oidc.claims.groupRole) }}
         {{- if . }}{{ $custom = append $custom . }}{{- end }}
         {{- end }}
         {{- if $custom }}
@@ -48,7 +48,7 @@ data:
         values:
           - claimSource:
               claim: {{ required "gateway: oidc.claims.user is required when oidc.enabled" .Values.oidc.claims.user | quote }}
-      {{- range $header, $claim := dict "X-ToxIndex-Group-Name" .Values.oidc.claims.groupName "X-ToxIndex-User-Name" .Values.oidc.claims.userName "X-ToxIndex-User-Email" .Values.oidc.claims.email "X-ToxIndex-Group-Personal" .Values.oidc.claims.groupPersonal }}
+      {{- range $header, $claim := dict "X-ToxIndex-Group-Name" .Values.oidc.claims.groupName "X-ToxIndex-User-Name" .Values.oidc.claims.userName "X-ToxIndex-User-Email" .Values.oidc.claims.email "X-ToxIndex-Group-Personal" .Values.oidc.claims.groupPersonal "X-ToxIndex-Group-Role" .Values.oidc.claims.groupRole }}
       - name: {{ $header }}
         {{- with $claim }}
         values:
@@ -59,6 +59,8 @@ data:
         {{- end }}
       {{- end }}
       - name: X-ToxIndex-Plan
+        values: []
+      - name: X-ToxIndex-Group-Admin
         values: []
       - name: X-ToxIndex-Issuer
         values:

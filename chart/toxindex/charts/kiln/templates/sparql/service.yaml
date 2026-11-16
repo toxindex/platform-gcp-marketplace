@@ -6,11 +6,6 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "kiln.labels" (dict "name" "kiln-sparql" "component" "backend" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.sparql.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.sparql.tailscale.hostname }}
-  {{- end }}
 spec:
   selector:
     {{- include "kiln.selectorLabels" (dict "name" "kiln-sparql") | nindent 4 }}

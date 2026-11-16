@@ -15,29 +15,26 @@ global:
     grantsPublicKey: "THZczzJm4ZzEhTyYfPPLG7DKdofI+1i+8YYxI4ipQ+Y="
   images:
     license-agent:
-      tag: "1792811372-9122053"
-      digest: sha256:301ca3ddd946a51f5d4f4c38e9f33c4038204ce05980b6efd725438a1bca6a52
+      tag: "0.8.3"
+      digest: sha256:ef348c95bb7211e57808dff93731f285c031b8a57f012c10d9f86b5a8e905768
     toxjobs-manager:
-      tag: "1792811349-9122053"
-      digest: sha256:4af63f49f430bf13954cf0871fd830106bf88c3d638f234f98d142c63a004671
+      tag: "0.8.3"
+      digest: sha256:3d78d67382beba7d4bcb28556fd9e95080a2d4f5663da876fb51a97200316204
     kiln-resolver:
-      tag: "1792811137-9122053"
-      digest: sha256:ea1639036cfc40637b2c378cf381f01dee0c5b7cf860d548289731b018b248af
+      tag: "0.8.3"
+      digest: sha256:eb73e1169d61c8c6a56b363e08c98e9802440e37d144b9428c2a57965478d96a
     kiln-query:
-      tag: "1792811145-9122053"
-      digest: sha256:c3647ad939f2ad9eac44ca144bce63794f1ce80cdbb3b7d5b4b75a4f72e1a345
+      tag: "0.8.3"
+      digest: sha256:aced85f839fd7bc0fa1cb366344593bb3eaf3eb956f68fc53c9bea7cd06aca54
     kiln-loader:
-      tag: "1792811336-9122053"
-      digest: sha256:ea47376e9101b5821e7e8f013788f2d561c35a018799e6a7b48185a0317bf741
+      tag: "0.8.3"
+      digest: sha256:fe11cd9c0ad00753d9d1c10522fef6ac7dc9b4547d17f218e7c5248da3afe94c
     kiln-fts:
-      tag: "1792811838-9122053"
-      digest: sha256:2fd2dcc0c4eea925b96b9098b980f0ac862136bbb4f093c1319a356b0d903c78
+      tag: "0.8.3"
+      digest: sha256:f6995a53346fd0c6f661e5cbbe93744ce172c24956f37c8336734126614fd0d5
     kiln-sparql:
-      tag: "1792811829-9122053"
-      digest: sha256:1a35c58b2ae77bbc3e520f40e831ba25013a1c5417488ed2ac7609f7487b5aa1
-    pgbouncer:
-      tag: "1792637877-522176a"
-      digest: sha256:b09092099245a133b1e718322b091228ac959857602ad0c7ccebd9c84ac56eb1
+      tag: "0.8.3"
+      digest: sha256:e81d1022a7473ec08d3d3fdb9fcc7601951a238a4effa2a82d9d8da5297c96a6
     toxjobs-rdkit:
       tag: "1790825497-3b1cb01"
       digest: sha256:9efb7c634a891c7069d1899f21b420ef66cdb814e643507c6560497a309506be
@@ -48,8 +45,8 @@ global:
       tag: "1790698150-ddae507"
       digest: sha256:f329817d450ceab12785984f3e5d90342af66f1d966f537a30ac19a4beb762c6
     toxjobs-reactiont5:
-      tag: "1790825308-3b1cb01"
-      digest: sha256:b3f24cffa0e25d9404077b85982794db074a35f15763d158f9f4c6c6a6a61a0f
+      tag: "1794786253-a3d2b44"
+      digest: sha256:73b2070b3990f00908f2079b456df3cd55618b7bb873caa5d9675595306b9a06
     toxjobs-pleiome:
       tag: "1786067013-9646167"
       digest: sha256:0498596bf817d43b4111684a9a784139680ff05eddb63ad868d20607500d5276
@@ -60,11 +57,11 @@ global:
       tag: "1792113025-715b46d"
       digest: sha256:eb2d10d784972cec622b8b5e4e31e59949ebb1e59821c6a4b58fae8606d40e56
     toxjobs-ctoxpred:
-      tag: "1786066763-9646167"
-      digest: sha256:368702c9e4f113dc79932aa829884ee2fdacd47a2971536a48f5efa2d137e23b
+      tag: "1794786256-a3d2b44"
+      digest: sha256:1e6e0733387e145705eaf6fd78db5bb7b38c7ddff0da7928ba6a8df3da0f09c7
     toxjobs-deeppurpose:
-      tag: "1786066895-9646167"
-      digest: sha256:d329aad91c9f43037a4b4d4e91a9dbe0c7282d5e301054b7867088fc3b0080da
+      tag: "1794786269-a3d2b44"
+      digest: sha256:6d695aeba4de364b93f59c45d8d05c98e65b55959c62adb857b1d95afc5f0c15
     toxjobs-indigo:
       tag: "1786066765-9646167"
       digest: sha256:1845a367cbe2f1a301520b1cab74d364e9cc448140512bd86765e8fa3123e32f
@@ -75,41 +72,41 @@ global:
       tag: "1790650042-d889e00"
       digest: sha256:ef691d7cad64c820ed938281c350c0e5cbf522d1d8e5834f041c7f33d8a1de56
     toxjobs-admet-ai:
-      tag: "1790825321-3b1cb01"
-      digest: sha256:fd415146d3d9c37d699c750837fc7a4797d3047aaa77208dd929e6e4611b740f
+      tag: "1794786354-a3d2b44"
+      digest: sha256:4fa1079aa53d25c6cd8c173dbc6803239d24d1c4a96589420dd0b82c7f615950
     toxjobs-biotransformer:
       tag: "1790698150-ddae507"
       digest: sha256:7e93289a66c2d7b46d4b55bc8c41d58270fee6c3474721263ec70571849743ee
     toxjobs-metabognn:
-      tag: "1790825321-3b1cb01"
-      digest: sha256:c778495a44cfd1fa835e9524a4fe10cbf79d6b120f4cf551ceeee6488ed9a1c1
+      tag: "1794786270-a3d2b44"
+      digest: sha256:a99a9c6a7d369627fb7dcd9c3d744789a15426f7dc5ec5067c2dbee938b13b7f
     toxjobs-metapredictor:
-      tag: "1786069769-8a3a2ab"
-      digest: sha256:90a77e6b62cdea9a056d8161098f156e4635d6a1ed3105afd702a021f56a2bca
+      tag: "1794786333-a3d2b44"
+      digest: sha256:9669aed7a97cb97694310eadace4d4c1735ed75120b21bb47c3ddb0a81aa4804
     toxjobs-vega:
       tag: "1786067152-9646167"
       digest: sha256:d49c4624c4cc1fd04459641ff919f1c50b55cadcf4097686ea5c75bfab70a97a
     toxjobs-etoxpred:
-      tag: "1786067261-9646167"
-      digest: sha256:70f9131337f55e06300822924d3e5388d631748cac6b38dcb0692ebd4ec75b79
+      tag: "1794786345-a3d2b44"
+      digest: sha256:f7034a04937f0afdecfac2fd66adc0d4360ef6214f8f5e9ddc2d1d6331ac8be4
     toxjobs-exposome:
       tag: "1786067347-9646167"
       digest: sha256:3f2587e2ac6a92bf3d5a835a1f257e0d36055cc336d45a768a843d0b417a4720
     toxjobs-hobpre:
-      tag: "1786067359-9646167"
-      digest: sha256:baa2131acab7322f72be631a8d1f50460665e8784a1f9d0125481c9a9d24842a
+      tag: "1794786320-a3d2b44"
+      digest: sha256:77f04619c60110a422a505c9e86059292987af95fbc43e869026d8b4e29dfac7
     toxjobs-pksmart:
-      tag: "1786067397-9646167"
-      digest: sha256:0b95fc68d3b189a90f3e0aea0144ec5d6862975063efbe41deae01412a35d67b
+      tag: "1794786270-a3d2b44"
+      digest: sha256:dd8ca5519b35d7edbcc5b3ccde683eb4c1fc9da5141c0276acdc1ae05dad293e
     toxjobs-pmi:
-      tag: "1786067433-9646167"
-      digest: sha256:b20d3541663b4cc3ee998db4e3673cf2d9e2577ba04541432c9e18ead616dc4a
+      tag: "1794786262-a3d2b44"
+      digest: sha256:bd32b26274a117621521be85a3bfb45c699bc80bd386b23d1f9647b3f983ee69
     toxjobs-soltrannet:
       tag: "1790649951-d889e00"
       digest: sha256:79af927f5efc6d16f0ab13f4240ad5eb6aea7321f6336481507cede399cd5ea9
     toxjobs-stoptox:
-      tag: "1786067523-9646167"
-      digest: sha256:45d325f2635e26169ca3440a1dccc347eceb5edb1e7ea69e694c5d407cbfcf44
+      tag: "1794786548-a3d2b44"
+      digest: sha256:5584de43a7f5931168c8d4ddc875a74411aa148417a6b630b54a828d6af60ffc
     toxjobs-sygma:
       tag: "1786067595-9646167"
       digest: sha256:27cebf4b5d757072ae577af00ef563b76b0871cd8cc7c2e5228621d6aa497a1c
@@ -120,71 +117,44 @@ global:
       tag: "1786067822-9646167"
       digest: sha256:82d094262f7e8e4251c19156689b76208fab83eae0a43d3f618007d7bfd8d60e
     flow-engine:
-      tag: "1792810856-9122053"
-      digest: sha256:52083f9b05a88b5ed810b5c39aac8db425824502f9365b5ddfed2c59c78849b6
+      tag: "0.8.3"
+      digest: sha256:f91cab527eccfc1361891fc501a37eadc709ba1d1e6c481da90c7bbbb70f3f4c
     flow-worker:
-      tag: "1792810855-9122053"
-      digest: sha256:7bd70391b98ecba2c0a7e5b3fb8879faf78c4f557ddfef5ef17fdb0ae651dff8
+      tag: "0.8.3"
+      digest: sha256:c78b8501a9eca27245b22dd13c4809fe4d89eb2239e9a4437b9903524dec4a02
     sage-agent:
-      tag: "1792810861-9122053"
-      digest: sha256:835083c4eb7c6df8ad63af5878b75301d82dee4c2587bf174f87950a061edb8e
+      tag: "0.8.3"
+      digest: sha256:d85d8ebe2c2d9314e3d639c56157623e5f90b0b420159b7ab07f98f0c2187a35
     sage-control-plane:
-      tag: "1792811658-9122053"
-      digest: sha256:c2c6e3a55ba76c83b87a2e9c51aa60193f441706f4145aece2dbb3007ab520b0
+      tag: "0.8.3"
+      digest: sha256:79c36338c8d5901a80d9d25f64407ba681fa52b37c9918d86c68b2b8670e1706
     sage-db:
-      tag: "1792810845-9122053"
-      digest: sha256:200dc87632a4ec08edb5463b7ea486fa88fdead3040f7b863a05daae78f6de37
+      tag: "0.8.3"
+      digest: sha256:79e8e38206b069c02eaa735f71caf676a3c9ea456baa608b7f5883b0c8b2431d
     git-engine:
-      tag: "1792810854-9122053"
-      digest: sha256:4a962eea1d76c4a54a2440701a888144d04a44b6615a04a5a0aeaf376123be60
+      tag: "0.8.3"
+      digest: sha256:d84b0cb7e3d1fbf7824d2509bc5306f58d3286792d43d285625c2fa62d77cea2
     git-db:
-      tag: "1792811089-9122053"
-      digest: sha256:201d784a2d6e26cbc806acdcbbb89c8a288ec1ebdcbb244a390585f33aadc042
+      tag: "0.8.3"
+      digest: sha256:0eb9f8ea6f9c12c0e0f27591122fa5113073fefb61f8c25ca939afd7177d6a78
     flow-db:
-      tag: "1792810862-9122053"
-      digest: sha256:b4ceecd30df09e0755a695d93fc1e16b7313371d0eb327569bed99397792104f
+      tag: "0.8.3"
+      digest: sha256:30c6a42cc90d5b33a08c078b7aa4669e2e2c0795dea252754b544249b0cc63c8
     sysrev-api:
-      tag: "1792811102-9122053"
-      digest: sha256:57fa2817fc014024880eabe2d0d3c818813ebcd335ccbe53dab6b7827d882e34
+      tag: "0.8.3"
+      digest: sha256:9f239aee1472106feea49a6e6f9e5b4b5de445710fdd3b068a1561b57d96292d
     sysrev-db:
-      tag: "1792811124-9122053"
-      digest: sha256:c29c3a55749544fd2e012e2896590178d82040fd360639f66d97d09b72db6eb7
+      tag: "0.8.3"
+      digest: sha256:fbe92aae928bc025af013f0b3c6953882816aeb868c6d3ff6a027162c10b9cc1
     temporal-server:
-      tag: "1792637876-522176a"
-      digest: sha256:ac2a9510d4377bb5584541b6e15c717b1c78a2acd05dff47ee669b68d9b7359e
+      tag: "0.8.3"
+      digest: sha256:aa38a85b85c24bd98a14db4f659e946d5528d1f1a2e21cff6932496777752e7f
     temporal-admin-tools:
-      tag: "1792637875-522176a"
-      digest: sha256:97045a3807bf72d72f429e0d32a1710a5a9f0564aa5a1b02767696e153f01058
-    temporal-ui:
-      tag: "1792637865-522176a"
-      digest: sha256:b96c27b40f8fb53607fcd1e2207ec0cdd8e0f8585e7cbd4c3e5ac928c6f76b91
-    cloud-sdk:
-      tag: "1792638005-522176a"
-      digest: sha256:2351a2c8fe8cd16b13a0bdf47981d23f38237fd56c240e593996d172a2b60a41
+      tag: "0.8.3"
+      digest: sha256:efb4362bd30ee940b3c46e9f6c44139d160ecb26456f406adae66cd738f0bdf1
     clickhouse:
-      tag: "1792637876-522176a"
-      digest: sha256:c115790992fc0d86e926e83955a117f4cf1fc268b894fcc102df49bb2180d27a
-    oauth2-proxy:
-      tag: "1792637877-522176a"
-      digest: sha256:87280095594cfb61823e9c2f69818679cf69ff7709331219b3dc3d7b9cdb136e
-    otel-collector:
-      tag: "1792637940-522176a"
-      digest: sha256:ed5edc29615d936a2ae797d6ba7c6fc69738f5f63190dfae9b774992145e496d
-    kube-state-metrics:
-      tag: "1792637938-522176a"
-      digest: sha256:0183fa10f34d5e855238177969a67e040886c37b4562a491a584deaec097211f
-    victoria-metrics:
-      tag: "1792637944-522176a"
-      digest: sha256:2d2b634df6390c8d2e71326146fb1550d6cc78530b1b188b76cca83718e92571
-    vmalert:
-      tag: "1792637949-522176a"
-      digest: sha256:89c3b014d3399afa19bfef54c66cd9a4c11fcfa27f26f61b318bed8d54f2ac12
-    alertmanager:
-      tag: "1792637956-522176a"
-      digest: sha256:a8e0f0b675f67ebf3d55428b5cc2e852f7deaa6c4619c74f3e29b1f90f830a6e
-    dcgm-exporter:
-      tag: "1792638004-522176a"
-      digest: sha256:6488ef651110e7befb8198ecd6fb8353502e18afff8952e35a4734b8f5f6f3f1
+      tag: "0.8.3"
+      digest: sha256:e43cced25387f96117ab3d3be5d1c3e3e9f07d70ea5f90ba0d9df3a70ecd6cff
     toxjobs-ablang2:
       tag: 1790698150-ddae507
       digest: sha256:7c158e4ea74d5dbd3f1fcc9b6915ce0e10e70f67804d317da5acdd24939da99b
@@ -195,23 +165,23 @@ global:
       tag: 1786411250-98f4ef0
       digest: sha256:13e72c2c136f27cd38f55e2269915aa6a0786e1859546ebef240331c76e945af
     toxjobs-amplify:
-      tag: 1786411090-98f4ef0
-      digest: sha256:88bb15145f2eec443c52772a25121e6e9c7e8f22ff8177918fae315505edd5df
+      tag: 1794786555-a3d2b44
+      digest: sha256:aa1197bb2cb67eabe7710b727e17d5337c3440808ee9a9c9b70bc497a03b23fd
     toxjobs-conplex:
-      tag: 1790825324-3b1cb01
-      digest: sha256:3136eec6870bce86ed0d485b7027b9a75c3eec3762b357fb1135d6610e6e413f
+      tag: 1794786737-a3d2b44
+      digest: sha256:7a6f0b74556c6ad0ce002382311d14648de2fafc1ccc92f436e4a743e16e9662
     toxjobs-dtox:
-      tag: 1786411086-98f4ef0
-      digest: sha256:2a2025a0c7a5410014bc2a55703f4e102e6baf6924a38bbb48afb9071c49fc0e
+      tag: 1794786605-a3d2b44
+      digest: sha256:057cf0a3bc466495c2426f06cc04b6f275f82612a0d723e6a7dc7f2456e9bf67
     toxjobs-glmcyp:
       tag: 1786411342-98f4ef0
       digest: sha256:525f3432ba493e0c274c8488e24dd46d5511b473bc661d9014ecb260498f8133
     toxjobs-gt4sd:
-      tag: 1786415895-98f4ef0
-      digest: sha256:338c02b5be2093221b24412cf9a8196db6d96d0a1d10966a9af31de2affbe158
+      tag: 1794786745-a3d2b44
+      digest: sha256:d03c0e68430d39446b08faa3bed5fbac4ad2436b6d1c2e1ec2210da98d35da53
     toxjobs-gtranscyps:
-      tag: 1786411083-98f4ef0
-      digest: sha256:f04a39a312f2a6175a0932c71e934a3b3f4733805fc3e0f03fcd2a6d7eb77a54
+      tag: 1794786670-a3d2b44
+      digest: sha256:f65fce784fe0ca2c1d163c2a144ce080cb715bbc04afc0b459ec6de03e1a3aab
     toxjobs-mhcflurry:
       tag: 1786411087-98f4ef0
       digest: sha256:fcaf5ce93bef8261c421dc92c6bc1b1dcd0fc54feff5461095fc2a15a2f80f5d
@@ -222,8 +192,8 @@ global:
       tag: 1786411082-98f4ef0
       digest: sha256:13bc62ae0d303d2fc93e9d68c41d5dce551d929a7b1b303d9d90e5798aafa75b
     toxjobs-esmfold:
-      tag: 1790825309-3b1cb01
-      digest: sha256:b652d5621ef9a51a4d046c775f5c8a2b5fa654fd73b633ae57221c6a31c6569c
+      tag: 1794786762-a3d2b44
+      digest: sha256:11a4337cc815e44a0b7bdb89c0c78be69e2f9fe72e1fdc1c1328aa76dfbb031f
     toxjobs-amesformer:
       tag: 1787773164-66b4bc91
       digest: sha256:e25fbc95572fb836737c9caa3c8d4da36a190c05f93516f057626f1f4ae3adde
@@ -237,11 +207,11 @@ global:
       tag: 1790698163-ddae507
       digest: sha256:42017aa89a83f9bdc6ec16fb6e9146598d758b4976a031dfa5ac04d3a49d69bf
     toxjobs-pqsar:
-      tag: 1787783958-c248a979
-      digest: sha256:eeab495f30aedd394a2b4cd69e5e6b00c306e8acde01bdb3d043b17a915cc213
+      tag: 1794786970-a3d2b44
+      digest: sha256:1b081c0a9f07e6b80aeb5bb8ff9882a81d0c66d03961f2f9893cc67ce6918453
     toxjobs-trident:
-      tag: 1790825308-3b1cb01
-      digest: sha256:bb9597577448ac3dfd39e2bcf4ab25e0fe384847ebf02058fe702b30f2b72385
+      tag: 1794786978-a3d2b44
+      digest: sha256:38ea76eb5f49032c3d137626803d48ab35ba02151c59a6f78e841f561321b6ff
     toxjobs-gnina:
       tag: 1787874431-a7f990a3
       digest: sha256:6268f33e0967bb130e3e19adfba937206ce580565ccf982bf773108e701eda40
@@ -258,15 +228,17 @@ global:
       tag: 1790183307-df8dc527
       digest: sha256:8d0375584cbfaa117942ea6f303e612500139e3f01cdc40b3bce970f876ebb5a
     postgres:
-      tag: 1792638009-522176a
-      digest: sha256:07e8acad8e616270490bcaa126b5ce0d85fed416f74205a8680a9d479d0412e3
+      tag: 0.8.3
+      digest: sha256:14f310c2a4d97b78bfc4f31b0854d1b80769fc158b47c931f19624a318673135
   datasets:
     kiln:
       bucket: tidx-shared-kiln-dist-gcs
-      version: "2026-10-24"
+      version: "2026-11-15"
   observability:
     endpoint: http://otel-collector:4317
   auth: single-user
+  groupAdminRoles: []
+  trustedWorkloads: []
   proxyAuthSecret: gateway-proxy-auth
   storage:
     host: https://storage.googleapis.com
@@ -308,6 +280,8 @@ observability:
     metrics:
       - prometheusremotewrite
     logs:
+      - debug
+    audit:
       - debug
   extraScrapeConfigs: []
   resources:

@@ -19,6 +19,7 @@ spec:
       labels:
         {{- include "toxindex.labels" (dict "name" "victoria-metrics" "release" $.Release.Name "partOf" "observability" "component" "database") | nindent 8 }}
     spec:
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: victoria-metrics
           image: {{ include "toxindex.image" (dict "root" $ "name" "victoria-metrics") | quote }}

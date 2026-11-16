@@ -36,6 +36,7 @@ spec:
                   {{- include "sage.selectorLabels" (dict "name" "sage-control-plane") | nindent 18 }}
               topologyKey: kubernetes.io/hostname
       {{- end }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: sage-agent
           image: {{ include "toxindex.image" (dict "root" $ "name" "sage-agent") | quote }}
@@ -43,13 +44,13 @@ spec:
             {{- include "toxindex.containerSecurityContext" (dict) | nindent 12 }}
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "sage-agent") | nindent 12 }}
-            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.namespaceEnv" (dict "root" $) | nindent 12 }}
             {{- include "sage.dbEnv" (dict "root" $) | nindent 12 }}
             {{- include "toxindex.blobStoreEnv" (dict "bucket" .Values.fileStore.bucket "signerServiceAccount" .Values.fileStore.serviceAccount.gcpServiceAccount "dir" (include "sage.blobDir" .)) | nindent 12 }}
             - name: VERTEX_PROJECT
               value: {{ .Values.agent.vertex.project | default "" | quote }}
             - name: VERTEX_REGION
-              value: {{ .Values.agent.vertex.region | quote }}
+              value: {{ required "sage.agent.vertex.region is required: it is the Vertex AI location every model call goes to" .Values.agent.vertex.region | quote }}
             - name: FLOW_ENGINE_URL
               value: {{ include "toxindex.upstream.flowEngine" . | quote }}
             - name: GIT_ENGINE_URL
@@ -67,14 +68,23 @@ spec:
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- include "toxindex.entitlementsEnv" (dict "root" $) | nindent 12 }}
+            {{- with .Values.agent.vertex.credentialsSecret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/key.json
+            {{- end }}
           volumeMounts:
             {{- include "toxindex.entitlementsVolumeMount" (dict "root" $) | nindent 12 }}
             {{- if include "sage.blobsOnDisk" . }}
             - name: blobs
               mountPath: {{ include "sage.blobDir" . }}
+            {{- end }}
+            {{- with .Values.agent.vertex.credentialsSecret }}
+            - name: gcp-credentials
+              mountPath: /var/secrets/gcp
+              readOnly: true
             {{- end }}
           {{- with .Values.agent.resources }}
           resources:
@@ -100,5 +110,10 @@ spec:
         - name: blobs
           persistentVolumeClaim:
             claimName: sage-blobs
+        {{- end }}
+        {{- with .Values.agent.vertex.credentialsSecret }}
+        - name: gcp-credentials
+          secret:
+            secretName: {{ . }}
         {{- end }}
 {{- end }}

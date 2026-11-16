@@ -50,6 +50,7 @@ spec:
       {{- end }}
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       initContainers:
         - name: wait-for-temporal-namespace
           image: {{ include "toxindex.image" (dict "root" $ "name" "temporal-admin-tools") | quote }}
@@ -72,7 +73,7 @@ spec:
             - containerPort: 8080
           env:
             {{- include "toxindex.otelEnv" (dict "root" $ "name" "flow-worker") | nindent 12 }}
-            {{- include "toxindex.sentryEnv" (dict "root" $) | nindent 12 }}
+            {{- include "toxindex.namespaceEnv" (dict "root" $) | nindent 12 }}
             {{- include "flow.dbEnv" (dict "root" $) | nindent 12 }}
             - name: TOXJOBS_URL
               value: {{ include "toxindex.upstream.toxjobs" $ | quote }}
@@ -91,13 +92,13 @@ spec:
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- include "toxindex.blobStoreEnv" $.Values.engine.artifactStore | nindent 12 }}
             - name: VERTEX_PROJECT
               value: {{ $.Values.engine.vertex.project | default "" | quote }}
             - name: VERTEX_REGION
-              value: {{ $.Values.engine.vertex.region | quote }}
+              value: {{ required "flow.engine.vertex.region is required: it is the Vertex AI location every model call goes to" $.Values.engine.vertex.region | quote }}
             {{- with $.Values.engine.vertex.credentialsSecret }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/gcp/key.json

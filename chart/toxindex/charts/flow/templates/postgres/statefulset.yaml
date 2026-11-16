@@ -19,6 +19,7 @@ spec:
       labels:
         {{- include "flow.labels" (dict "name" "flow-postgres" "component" "database" "release" $.Release.Name) | nindent 8 }}
     spec:
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: postgres
           image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}

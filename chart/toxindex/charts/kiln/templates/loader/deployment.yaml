@@ -30,6 +30,7 @@ spec:
                 matchLabels:
                   {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 18 }}
               topologyKey: kubernetes.io/hostname
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: loader
           image: {{ include "toxindex.image" (dict "root" $ "name" "kiln-loader") | quote }}
@@ -63,6 +64,10 @@ spec:
               value: /etc/license/license
             - name: LICENSE_BROKER_URL
               value: {{ .Values.global.license.brokerUrl | quote }}
+            {{- if .Values.fts.enabled }}
+            - name: KILN_FTS_BUILDER_URL
+              value: http://kiln-fts-builder
+            {{- end }}
             {{- with .Values.loader.maxTables }}
             - name: DATASET_MAX_TABLES
               value: {{ . | quote }}
@@ -79,12 +84,6 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz

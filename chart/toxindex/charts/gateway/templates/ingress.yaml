@@ -30,10 +30,12 @@ spec:
                 name: gateway
                 port:
                   number: 80
-  {{- with .Values.ingress.tlsSecret }}
+  {{- if or .Values.ingress.tls .Values.ingress.tlsSecret }}
   tls:
     - hosts:
-        - {{ required "gateway: ingress.host is required when ingress.enabled" $.Values.ingress.host }}
+        - {{ required "gateway: ingress.host is required when ingress.enabled" .Values.ingress.host }}
+      {{- with .Values.ingress.tlsSecret }}
       secretName: {{ . }}
+      {{- end }}
   {{- end }}
 {{- end }}

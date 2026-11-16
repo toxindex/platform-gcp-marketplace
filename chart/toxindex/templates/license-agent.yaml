@@ -72,6 +72,7 @@ spec:
       serviceAccountName: license-agent
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65532 "gid" 65532) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: license-agent
           image: {{ include "toxindex.image" (dict "root" $ "name" "license-agent") | quote }}

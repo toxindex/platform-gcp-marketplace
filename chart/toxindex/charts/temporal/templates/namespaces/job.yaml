@@ -10,6 +10,7 @@ template:
     automountServiceAccountToken: false
     securityContext:
       {{- include "toxindex.podSecurityContext" (dict "uid" 1000 "gid" 1000) | nindent 8 }}
+    {{- include "toxindex.platformImagePullSecrets" $ | nindent 4 }}
     containers:
       - name: temporal-namespace-provisioner
         image: {{ $image | quote }}

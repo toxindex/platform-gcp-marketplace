@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "authenticate",
+        "admit",
+        "apikey.create",
+        "apikey.revoke",
+        "git.fetch",
+        "git.push",
+        "device.approve",
+        "device.deny",
+        "file.read",
+        "file.delete",
+        "folder.delete",
+        "skill.create",
+        "skill.update",
+        "terms.accept",
+        "tool.call",
+        "export.create",
+        "export.read",
+        "conversation.delete",
+        "pipeline.create",
+        "pipeline.update",
+        "pipeline.delete",
+        "run.start",
+        "run.cancel",
+        "run.repair",
+        "credential.apply",
+        "license.verify",
+        "license.exchange",
+        "dossier.create",
+        "dossier.update",
+        "dossier.archive",
+        "dossier.unarchive",
+        "dossier.delete",
+        "admin.access",
+        "group.list",
+        "group.plan.set",
+        "people.list",
+        "usage.read",
+        "billing.read",
+        "conversation.list",
+        "conversation.read"
+      ],
+      "type": "string"
+    },
+    "actor": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "on_behalf_of": [
+          "workload"
+        ]
+      },
+      "properties": {
+        "group": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "user",
+            "operator",
+            "unauthenticated",
+            "system",
+            "workload"
+          ],
+          "type": "string"
+        },
+        "on_behalf_of": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "person",
+                "automation"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        "operator": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "plan": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "user": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "workload": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "change": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "to": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "credential": {
+      "enum": [
+        "browser",
+        "apikey",
+        "local",
+        "workload"
+      ],
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "allow",
+        "deny"
+      ],
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "unstamped",
+        "missing_identity",
+        "invalid_identity",
+        "missing_credential",
+        "invalid_credential",
+        "misconfigured",
+        "not_entitled",
+        "not_permitted",
+        "not_found",
+        "invalid_change",
+        "unnamed_actor"
+      ],
+      "type": "string"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/+=|-]{0,255}$",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "apikey",
+            "repository",
+            "file",
+            "folder",
+            "skill",
+            "tool",
+            "review",
+            "export",
+            "conversation",
+            "pipeline",
+            "run",
+            "secret",
+            "install",
+            "dossier",
+            "group"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "type": "object"
+    },
+    "v": {
+      "const": 2
+    }
+  },
+  "required": [
+    "v",
+    "action",
+    "decision",
+    "actor"
+  ],
+  "title": "ToxIndex audit event",
+  "type": "object"
+}

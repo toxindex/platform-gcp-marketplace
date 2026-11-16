@@ -6,6 +6,10 @@
 {{- if and (eq $auth "gateway") (not $oidc) }}
 {{- fail "global.auth=gateway requires gateway.enabled=true and gateway.oidc.enabled=true: the gateway is what authenticates the user and stamps the X-ToxIndex-* claims the control plane admits on, so there is no principal without it" }}
 {{- end }}
+{{- $roleClaim := dig "oidc" "claims" "groupRole" "" .Values.gateway }}
+{{- if and $oidc (not (eq (empty $roleClaim) (empty .Values.global.groupAdminRoles))) }}
+{{- fail "gateway.oidc.claims.groupRole and global.groupAdminRoles are set together: the claim says which role a person holds in their group and the list says which of those roles administers it, so either alone makes no one a group admin" }}
+{{- end }}
 {{- if and (eq $auth "single-user") $oidc }}
 {{- fail "gateway.oidc.enabled=true requires global.auth=gateway: a single-user edge ignores the gateway's claims and would serve every authenticated user as the same local owner" }}
 {{- end }}

@@ -20,6 +20,7 @@ spec:
       serviceAccountName: otel-collector
       tolerations:
         - operator: Exists
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: otel-agent
           image: {{ include "toxindex.image" (dict "root" $ "name" "otel-collector") | quote }}

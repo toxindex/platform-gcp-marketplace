@@ -232,6 +232,7 @@ spec:
       labels:
         {{- include "toxindex.labels" (dict "name" "vmalert" "release" $.Release.Name "partOf" "observability" "component" "alerting") | nindent 8 }}
     spec:
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: vmalert
           image: {{ include "toxindex.image" (dict "root" $ "name" "vmalert") | quote }}

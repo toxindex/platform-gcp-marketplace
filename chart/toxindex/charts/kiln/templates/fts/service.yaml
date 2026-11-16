@@ -5,16 +5,39 @@ metadata:
   name: kiln-fts
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "backend" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.fts.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.fts.tailscale.hostname }}
-  {{- end }}
+    {{- include "kiln.labels" (dict "name" "kiln-fts-reader" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  selector:
+    {{- include "kiln.selectorLabels" (dict "name" "kiln-fts-reader") | nindent 4 }}
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiln-fts-builder
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "indexer" "release" $.Release.Name) | nindent 4 }}
 spec:
   selector:
     {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 4 }}
   ports:
     - port: 80
       targetPort: 8080
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kiln-fts-reader
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-fts-reader" "component" "backend" "release" $.Release.Name) | nindent 4 }}
+spec:
+  minAvailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      {{- include "kiln.selectorLabels" (dict "name" "kiln-fts-reader") | nindent 6 }}
 {{- end }}

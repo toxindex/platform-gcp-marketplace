@@ -26,15 +26,6 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.engine.tailscale.expose }}
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 8080
-    {{- end }}
   egress:
     - to:
         - namespaceSelector:
@@ -59,18 +50,10 @@ spec:
       ports:
         - protocol: TCP
           port: 4317
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 8080
-        - protocol: TCP
-          port: 80
     - ports:
         - protocol: TCP
           port: 443
+    {{- include "toxindex.gcpMetadataEgress" . | nindent 4 }}
 {{- end }}
 {{- if .Values.postgres.enabled }}
 ---

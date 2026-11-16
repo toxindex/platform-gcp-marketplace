@@ -27,6 +27,7 @@ spec:
       serviceAccountName: otel-collector
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 10001) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: otel-collector
           image: {{ include "toxindex.image" (dict "root" $ "name" "otel-collector") | quote }}

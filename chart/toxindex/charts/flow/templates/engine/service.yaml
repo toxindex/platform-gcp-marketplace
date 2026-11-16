@@ -6,15 +6,14 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "flow.labels" (dict "name" "flow-engine" "component" "backend" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.engine.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.engine.tailscale.hostname }}
-  {{- end }}
 spec:
   selector:
     {{- include "flow.selectorLabels" (dict "name" "flow-engine") | nindent 4 }}
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8080
+    - name: metering
+      port: 8081
+      targetPort: 8081
 {{- end }}

@@ -29,9 +29,6 @@ engine:
   vertex:
     project:
     region: global
-  tailscale:
-    expose: false
-    hostname: tidx-flow-engine
   resources:
     requests:
       cpu: 50m
@@ -55,5 +52,3 @@ worker:
     limits:
       memory: 512Mi
 
-remoteFlow:
-  enabled: false

@@ -12,16 +12,10 @@ clickhouse:
       memory: 6Gi
   storage:
     size: 20Gi
-  tailscale:
-    expose: false
-    hostname: tidx-clickhouse
 
 query:
   enabled: true
   credentialsSecret: kiln-query-credentials
-  tailscale:
-    expose: false
-    hostname: tidx-kiln-query
 
 resolver:
   enabled: true
@@ -35,9 +29,6 @@ sparql:
       memory: 2Gi
     limits:
       memory: 2Gi
-  tailscale:
-    expose: false
-    hostname: tidx-sparql
 
 fts:
   enabled: true
@@ -50,26 +41,20 @@ fts:
       memory: 2Gi
   storage:
     size: 20Gi
-  tailscale:
-    expose: false
-    hostname: tidx-kiln-fts
+  readers:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
 
 loader:
   enabled: true
   excludeBricks: []
-  storageHeadroom: 2.0
+  storageHeadroom: 1.25
 
-remoteClickhouse:
-  enabled: false
-
-remoteFts:
-  enabled: false
-
-remoteSparql:
-  enabled: false
-
-remoteQuery:
-  enabled: false
 
 ssdStorage:
   enabled: false

@@ -1,3 +1,0 @@
-{{- if and (not .Values.fts.enabled) .Values.remoteFts.enabled }}
-{{- include "toxindex.remoteService" (dict "name" "kiln-fts" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteFts.tailnetFqdn "labels" (include "kiln.labels" (dict "name" "kiln-fts" "component" "backend" "release" $.Release.Name))) }}
-{{- end }}

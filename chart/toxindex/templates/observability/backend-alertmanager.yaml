@@ -72,6 +72,7 @@ spec:
     spec:
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 65534) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: alertmanager
           image: {{ include "toxindex.image" (dict "root" $ "name" "alertmanager") | quote }}

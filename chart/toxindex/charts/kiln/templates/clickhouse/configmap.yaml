@@ -15,6 +15,10 @@ data:
     <clickhouse>
         <max_server_memory_usage_to_ram_ratio>0.8</max_server_memory_usage_to_ram_ratio>
     </clickhouse>
+  drop.xml: |
+    <clickhouse>
+        <database_atomic_delay_before_drop_table_sec>1</database_atomic_delay_before_drop_table_sec>
+    </clickhouse>
   access.xml: |
     <clickhouse>
         <access_control_improvements>

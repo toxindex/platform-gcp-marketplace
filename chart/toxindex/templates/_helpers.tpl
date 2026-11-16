@@ -42,6 +42,23 @@ app.kubernetes.io/name: {{ required "toxindex.selectorLabels needs a name" .name
 {{- (splitList "/" .root.Values.global.toolsRegistry) | first -}}
 {{- end -}}
 
+{{- define "toxindex.platformPullSecret" -}}
+platform-pull
+{{- end -}}
+
+{{- define "toxindex.platformPullsFromLicense" -}}
+{{- if eq ((splitList "/" .Values.global.registry) | first) (include "toxindex.license.registryHost" (dict "root" .)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "toxindex.platformImagePullSecrets" -}}
+{{- if include "toxindex.platformPullsFromLicense" . }}
+imagePullSecrets:
+  - name: {{ include "toxindex.platformPullSecret" . }}
+{{- end }}
+{{- end -}}
+
 {{- define "toxindex.license.grantsSecret" -}}
 {{- .root.Values.global.license.grantsSecret | default "tidx-grants" -}}
 {{- end -}}
@@ -91,21 +108,6 @@ app.kubernetes.io/name: {{ required "toxindex.selectorLabels needs a name" .name
 {{- if or $e.key $e.remoteSecret -}}true{{- end -}}
 {{- end -}}
 
-{{- define "toxindex.remoteService" -}}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .name }}
-  namespace: {{ .namespace }}
-  annotations:
-    tailscale.com/tailnet-fqdn: {{ required "tailnetFqdn is required for remote service" .fqdn }}
-  labels:
-    {{- .labels | nindent 4 }}
-spec:
-  type: ExternalName
-  externalName: placeholder
-{{- end -}}
-
 {{- define "toxindex.blobStoreEnv" -}}
 {{- if .bucket -}}
 - name: BLOB_BUCKET
@@ -132,6 +134,8 @@ spec:
 
 {{- define "toxindex.upstream.flowEngine" -}}http://flow-engine{{- end -}}
 
+{{- define "toxindex.upstream.flowMetering" -}}http://flow-engine:8081{{- end -}}
+
 {{- define "toxindex.upstream.temporal" -}}temporal-server:7233{{- end -}}
 
 {{- define "toxindex.upstream.gitEngine" -}}http://git-engine{{- end -}}
@@ -140,9 +144,22 @@ spec:
 
 {{- define "toxindex.upstream.sysrevApi" -}}http://sysrev-api{{- end -}}
 
+{{- define "toxindex.upstream.sysrevMetering" -}}http://sysrev-api:8081{{- end -}}
+
 {{- define "toxindex.otelEndpoint" -}}
 {{- $obs := .root.Values.global.observability | default dict -}}
 {{- $obs.endpoint | default "http://otel-collector:4317" -}}
+{{- end -}}
+
+{{- define "toxindex.auditExporters" -}}
+{{- $obs := .root.Values.observability -}}
+{{- $names := required "observability.pipelines.audit must name the exporters audit events leave through" $obs.pipelines.audit -}}
+{{- range $names -}}
+{{- if not (hasKey $obs.exporters .) -}}
+{{- fail (printf "observability.pipelines.audit names %q, which observability.exporters does not define" .) -}}
+{{- end -}}
+{{- end -}}
+{{- join ", " $names -}}
 {{- end -}}
 
 {{- define "toxindex.otelEnv" -}}
@@ -163,21 +180,32 @@ spec:
   value: {{ include "toxindex.operator" (dict "root" .root) | quote }}
 {{- end -}}
 
-{{- define "toxindex.sentryEnv" -}}
-{{- $sentry := .root.Values.global.sentry | default dict -}}
-- name: SENTRY_DSN
-  value: {{ $sentry.dsn | default "" | quote }}
-- name: SENTRY_ENVIRONMENT
+{{- define "toxindex.namespaceEnv" -}}
+- name: NAMESPACE
   value: {{ .root.Values.global.namespace | default .root.Release.Namespace | quote }}
 {{- end -}}
 
-{{- define "toxindex.sentryEgress" -}}
-{{- $sentry := .root.Values.global.sentry | default dict -}}
-{{- if $sentry.dsn }}
-- ports:
+{{- define "toxindex.proxyAuthSecretName" -}}
+{{- $g := .Values.global -}}
+{{- if $g.proxyAuthRemoteSecret -}}
+{{- $version := required "global.proxyAuthRemoteVersion is required with global.proxyAuthRemoteSecret, so a rotation rolls every pod that reads it" $g.proxyAuthRemoteVersion -}}
+{{- printf "%s-%s" $g.proxyAuthSecret (printf "%s@%v" $g.proxyAuthRemoteSecret $version | sha256sum | trunc 8) -}}
+{{- else -}}
+{{- $g.proxyAuthSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "toxindex.gcpMetadataEgress" -}}
+- to:
+    - ipBlock:
+        cidr: 169.254.169.254/32
+    - ipBlock:
+        cidr: 169.254.169.252/32
+  ports:
     - protocol: TCP
-      port: 443
-{{- end }}
+      port: 80
+    - protocol: TCP
+      port: 988
 {{- end -}}
 
 {{- define "toxindex.podSecurityContext" -}}

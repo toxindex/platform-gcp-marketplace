@@ -1,0 +1,3 @@
+{{- if hasKey (.Values.sage.controlPlane | default dict) "trustedWorkloads" }}
+{{- fail "sage.controlPlane.trustedWorkloads moved to global.trustedWorkloads, which the sage control plane and flow-engine both read: move the list there" }}
+{{- end }}

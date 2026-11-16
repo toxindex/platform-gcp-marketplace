@@ -23,9 +23,6 @@ api:
     size: 20Gi
   vertex:
     region: global
-  tailscale:
-    expose: false
-    hostname: tidx-sysrev-api
   resources:
     requests:
       cpu: 50m
@@ -33,5 +30,3 @@ api:
     limits:
       memory: 512Mi
 
-remoteApi:
-  enabled: false

@@ -6,11 +6,6 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "git.labels" (dict "name" "git-engine" "component" "backend" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.engine.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.engine.tailscale.hostname }}
-  {{- end }}
 spec:
   selector:
     {{- include "git.selectorLabels" (dict "name" "git-engine") | nindent 4 }}

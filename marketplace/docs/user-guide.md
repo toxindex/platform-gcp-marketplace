@@ -1,127 +1,181 @@
 # ToxIndex on Google Cloud Marketplace
 
-ToxIndex is a computational toxicology platform. This guide covers installing,
-configuring, and operating ToxIndex on Google Kubernetes Engine via Google
-Cloud Marketplace.
+ToxIndex is a computational toxicology platform. It installs into one namespace of a
+GKE cluster and keeps all state on persistent volumes in that namespace.
 
-## Overview
+| Component | Runs |
+|---|---|
+| sage | Web UI and AI assistant |
+| flow | Workflow engine |
+| kiln | ClickHouse warehouse, SPARQL, full-text search |
+| toxjobs | Prediction tools |
+| sysrev | Document review |
+| git | Repository storage |
+| temporal | Workflow scheduler |
 
-A ToxIndex deployment includes:
+## License
 
-- **kiln** — data loading and the ClickHouse analytical store
-- **toxjobs** — a catalog of computational toxicology prediction tools served over HTTP
-- **flow** — the workflow engine
-- **sage** — an AI assistant backed by Vertex AI (optional)
+The platform installs and runs without a license.
 
-ToxIndex installs and runs without a license. Licensed datasets and premium
-tools become available once a license issued by Insilica is applied. To
-purchase a license, contact [Insilica](https://insilica.co).
+| | Without a license | With a license |
+|---|---|---|
+| Prediction tools | None | Per license |
+| Licensed datasets | None | Per license |
+| Sage conversations | 5 per user per day | Per license |
+| Flow runs | 2 per group per day | Per license |
 
-## One-time setup
+For pricing, contact [Insilica](https://insilica.co).
 
-### Install client tools
+## Machines
 
-You need `gcloud`, `kubectl`, and `helm` installed and authenticated against
-the cluster you are deploying to.
+| Node pool | SKU | Nodes | Needed for |
+|---|---|---|---|
+| general | `e2-highmem-8` | 1 without a license; autoscale 2–6 with the full tool catalog | Everything |
+| gpu | `g2-standard-12` (1× NVIDIA L4), GPU time-sharing with 4 clients | 1 | `reactiont5`, `pleiome`, `deeppurpose`, `esmfold` — only if your license includes them |
+
+The full tool catalog requests 16 vCPU and 90 GiB of memory. Persistent volumes total
+200 GiB on the cluster's default StorageClass. The Terraform takes both machine types as
+variables.
+
+## Vertex AI
+
+Sage, flow and sysrev call models on Vertex AI in your project, billed to that project.
+Without Vertex AI, the platform runs and every model call fails.
+
+1. Enable `aiplatform.googleapis.com`.
+2. In Model Garden, enable Claude Opus 5, Claude Opus 4.8 and Claude Sonnet 5. Gemini
+   models need no enablement.
+3. Create one service account with `roles/aiplatform.user`.
+4. Grant it `roles/iam.workloadIdentityUser` for the Kubernetes service accounts
+   `sage-agent`, `flow-engine`, `flow-worker` and `sysrev-api` in the install namespace.
+5. Set these install parameters:
+
+| Parameter | Value |
+|---|---|
+| `sage.agent.serviceAccount.gcpServiceAccount` | Service account email |
+| `flow.engine.serviceAccount.gcpServiceAccount` | Service account email |
+| `flow.worker.serviceAccount.gcpServiceAccount` | Service account email |
+| `sysrev.api.serviceAccount.gcpServiceAccount` | Service account email |
+| `sage.agent.vertex.project` | Project ID |
+| `flow.engine.vertex.project` | Project ID |
+| `sysrev.api.vertex.project` | Project ID |
+| `sage.agent.vertex.region` | Vertex AI location, default `global` |
+| `flow.engine.vertex.region` | Vertex AI location, default `global` |
+| `sysrev.api.vertex.region` | Vertex AI location, default `global` |
+
+## Network egress
+
+| Host | For |
+|---|---|
+| `marketplace.gcr.io` | Platform images |
+| `registry.toxindex.com` | Licensed tool images |
+| `license.toxindex.com` | License exchange |
+| `storage.googleapis.com` | Licensed datasets |
+| `aiplatform.googleapis.com` | Vertex AI |
+
+## Install
+
+[`terraform/`](../../terraform) creates the cluster, both node pools, the Vertex AI
+service account and its bindings, and outputs the install parameters. Marketplace
+Kubernetes apps have no Terraform resource, so install the app itself from the console
+or with Helm.
+
+Every install needs the Application CRD:
 
 ```shell
-gcloud container clusters get-credentials CLUSTER_NAME --region REGION
+kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/crd/app-crd.yaml
 ```
 
-### Install the Application CRD
+**Console.** On the ToxIndex Marketplace page, click Configure and enter the parameters.
+
+**Helm.** From a checkout of this repository at a release tag:
 
 ```shell
-kubectl apply -f "https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/crd/app-crd.yaml"
+helm install toxindex chart/toxindex \
+  --namespace toxindex --create-namespace \
+  --set global.license.key=LICENSE_KEY \
+  --set sage.agent.serviceAccount.gcpServiceAccount=SA_EMAIL \
+  --set flow.engine.serviceAccount.gcpServiceAccount=SA_EMAIL \
+  --set flow.worker.serviceAccount.gcpServiceAccount=SA_EMAIL \
+  --set sysrev.api.serviceAccount.gcpServiceAccount=SA_EMAIL \
+  --set sage.agent.vertex.project=PROJECT_ID \
+  --set flow.engine.vertex.project=PROJECT_ID \
+  --set sysrev.api.vertex.project=PROJECT_ID
 ```
 
-### Optional: create a GCP service account for Vertex AI
+## Access
 
-The Sage AI assistant uses Vertex AI in your project through Workload
-Identity. Skip this section to run without Sage's AI features.
+The UI is the `sage-control-plane` Service on port 80:
 
 ```shell
-gcloud iam service-accounts create toxindex-vertex --project PROJECT_ID
-
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member "serviceAccount:toxindex-vertex@PROJECT_ID.iam.gserviceaccount.com" \
-  --role roles/aiplatform.user
+kubectl port-forward --namespace toxindex svc/sage-control-plane 8080:80
 ```
 
-Provide `toxindex-vertex@PROJECT_ID.iam.gserviceaccount.com` as the GCP
-service account email during installation, then complete the Workload
-Identity binding after installation (see below).
+By default the UI has no login. Anyone who reaches the Service acts as its owner.
 
-## Installation
+## Single sign-on
 
-### From the Google Cloud console
+The chart includes an [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/) gateway
+for any OIDC identity provider. It is off by default.
 
-Visit the ToxIndex page on Google Cloud Marketplace, click Configure, choose
-your cluster and namespace, and fill in the parameters. The license key and
-Vertex AI fields are optional and can be configured later.
+| Value | Setting |
+|---|---|
+| `global.auth` | `gateway` |
+| `gateway.enabled` | `true` |
+| `gateway.oidc.enabled` | `true` |
+| `gateway.oidc.issuerUrl` | Your IdP's issuer URL |
+| `gateway.oidc.clientId` | OIDC client ID |
+| `gateway.oidc.redirectUrl` | `https://HOST/oauth2/callback` |
+| `gateway.oidc.emailDomains` | Allowed email domains, default `*` |
+| `gateway.oidc.claims.user` | Claim that identifies the user, default `email` |
+| `gateway.oidc.claims.group` | Claim that names the user's organization |
+| `gateway.ingress.enabled` | `true` |
+| `gateway.ingress.host` | `HOST` |
+| `gateway.ingress.className` | Your ingress class |
+| `gateway.ingress.tlsSecret` | TLS Secret for `HOST` |
+| `global.images.oauth2-proxy.repository` | `quay.io/oauth2-proxy/oauth2-proxy` |
+| `global.images.oauth2-proxy.tag` | `v7.15.6` |
+| `global.images.oauth2-proxy.digest` | `sha256:c3415e8660af553f5e18f5d90db050614c02493c0ac6260ac59442f6d9b12048` |
 
-### From the command line
+The client secret goes in a Secret named `oidc` with the key `client-secret`.
 
-```shell
-mpdev install \
-  --deployer=marketplace.gcr.io/insilica/toxindex/deployer \
-  --parameters='{"name": "toxindex", "namespace": "toxindex"}'
-```
-
-## Post-install configuration
-
-### Complete the Vertex AI Workload Identity binding
-
-After installation, bind the Kubernetes service account `sage-agent` in your
-chosen namespace to the GCP service account:
-
-```shell
-gcloud iam service-accounts add-iam-policy-binding \
-  toxindex-vertex@PROJECT_ID.iam.gserviceaccount.com \
-  --member "serviceAccount:PROJECT_ID.svc.id.goog[NAMESPACE/sage-agent]" \
-  --role roles/iam.workloadIdentityUser
-```
-
-### Apply or rotate a license
-
-Licenses are delivered as a key that you store in a Secret named
-`APP_INSTANCE_NAME-license`:
+## Apply or rotate a license
 
 ```shell
-kubectl create secret generic toxindex-license \
-  --namespace NAMESPACE \
+kubectl create secret generic tidx-license \
+  --namespace toxindex \
   --from-literal=license=LICENSE_KEY \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-The platform picks up license changes without a restart.
-
-## Basic usage
-
-TODO: accessing the UI, port-forwarding, Ingress and TLS setup, running a
-first toxjobs workflow.
+The platform picks up the change without a restart.
 
 ## Backup and restore
 
-TODO: ClickHouse and Postgres backup procedures, dataset re-download on
-restore.
+All state is on the namespace's persistent volumes. Back up the namespace with
+[Backup for GKE](https://cloud.google.com/kubernetes-engine/docs/add-on/backup-for-gke/concepts/backup-for-gke).
 
-## Updating the app
+## Updating
 
-TODO: image update procedure per release track.
-
-## Scaling
-
-TODO: which components scale horizontally, GPU node pool guidance for the
-embedder.
+Each release is a tag in this repository. For Helm installs, run `helm upgrade` with the
+chart at the new tag.
 
 ## Uninstalling
 
+Console installs:
+
 ```shell
-kubectl delete application toxindex --namespace NAMESPACE
+kubectl delete application toxindex --namespace toxindex
 ```
 
-Persistent volume claims are not deleted automatically. To remove them:
+Helm installs:
 
 ```shell
-kubectl delete pvc --selector app.kubernetes.io/name=toxindex --namespace NAMESPACE
+helm uninstall toxindex --namespace toxindex
+```
+
+Persistent volumes are not deleted. Deleting them destroys all data:
+
+```shell
+kubectl delete pvc --all --namespace toxindex
 ```

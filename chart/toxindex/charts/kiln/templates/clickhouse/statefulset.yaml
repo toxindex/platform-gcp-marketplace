@@ -20,8 +20,8 @@ spec:
         {{- include "kiln.labels" (dict "name" "kiln-clickhouse" "component" "database" "release" $.Release.Name) | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/clickhouse/configmap.yaml") $ | sha256sum }}
-        checksum/users: {{ include (print $.Template.BasePath "/clickhouse/users-configmap.yaml") $ | sha256sum }}
     spec:
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: clickhouse
           image: {{ include "toxindex.image" (dict "root" $ "name" "clickhouse") | quote }}

@@ -1,9 +1,6 @@
 networkPolicy:
   enabled: true
 
-remote:
-  enabled: false
-
 postgres:
   enabled: true
   host: sage-postgres
@@ -37,6 +34,9 @@ fileStore:
 controlPlane:
   enabled: true
   agentUrl: http://sage-agent:8080
+  issueReportsUrl: ""
+  entities: true
+  adminFrom: []
   resources:
     requests:
       cpu: 50m

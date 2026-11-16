@@ -1,5 +1,5 @@
-{{- if not (or .Values.manager.enabled .Values.remoteManager.enabled) }}
-{{- fail "toxjobs: manager endpoint is unavailable — enable toxjobs.manager.enabled (local) or toxjobs.remoteManager.enabled (remote)" }}
+{{- if not .Values.manager.enabled }}
+{{- fail "toxjobs: manager endpoint is unavailable — enable toxjobs.manager.enabled" }}
 {{- end }}
 {{- range .Values.manager.excludeRigs }}
 {{- if not (hasKey $.Values.global.images .) }}

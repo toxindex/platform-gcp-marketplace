@@ -1,3 +1,0 @@
-{{- if and (not .Values.query.enabled) .Values.remoteQuery.enabled }}
-{{- include "toxindex.remoteService" (dict "name" "kiln-query" "namespace" (.Values.global.namespace | default .Release.Namespace) "fqdn" .Values.remoteQuery.tailnetFqdn "labels" (include "kiln.labels" (dict "name" "kiln-query" "component" "database" "release" $.Release.Name))) }}
-{{- end }}

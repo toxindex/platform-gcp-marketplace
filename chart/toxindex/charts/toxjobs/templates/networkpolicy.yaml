@@ -70,11 +70,6 @@ spec:
             matchLabels:
               app.kubernetes.io/part-of: {{ . }}
         {{- end }}
-        {{- if .Values.manager.tailscale.expose }}
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-        {{- end }}
       ports:
         - protocol: TCP
           port: 8080

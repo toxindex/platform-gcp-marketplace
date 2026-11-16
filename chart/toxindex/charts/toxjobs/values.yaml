@@ -5,9 +5,6 @@ manager:
   rigPort: 8080
   metricsPort: 9090
   reconcileInterval: 30s
-  tailscale:
-    expose: false
-    hostname: tidx-toxjobs-manager
   rigGrants:
     - rig:toxjobs-*
   gpuRigs:
@@ -23,7 +20,7 @@ manager:
     RIG_MAX_REQUESTS: "5000"
   resources:
     requests:
-      cpu: 250m
+      cpu: 50m
       memory: 512Mi
     limits:
       cpu: "1"
@@ -34,7 +31,7 @@ manager:
   gpu:
     resources:
       requests:
-        cpu: 500m
+        cpu: 100m
         memory: 2Gi
       limits:
         cpu: "2"
@@ -49,6 +46,22 @@ manager:
     - flow
   extraAllowIngressNamespaces: []
   rigOverrides:
+    toxjobs-conplex:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 2Gi
+        limits:
+          cpu: "1"
+          memory: 4Gi
+    toxjobs-dtox:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 2Gi
+        limits:
+          cpu: "1"
+          memory: 3Gi
     toxjobs-opera:
       resources:
         requests:
@@ -193,5 +206,3 @@ manager:
     limits:
       cpu: "1"
       memory: 512Mi
-remoteManager:
-  enabled: false

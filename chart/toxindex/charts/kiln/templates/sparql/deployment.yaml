@@ -8,6 +8,7 @@ metadata:
     {{- include "kiln.labels" (dict "name" "kiln-sparql" "component" "backend" "release" $.Release.Name) | nindent 4 }}
 spec:
   replicas: 1
+  progressDeadlineSeconds: 1800
   selector:
     matchLabels:
       {{- include "kiln.selectorLabels" (dict "name" "kiln-sparql") | nindent 6 }}
@@ -19,6 +20,7 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 999 "gid" 999) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: sparql
           image: {{ include "toxindex.image" (dict "root" $ "name" "kiln-sparql") | quote }}
@@ -38,7 +40,7 @@ spec:
             - name: PROXY_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.proxyAuthSecret }}
+                  name: {{ include "toxindex.proxyAuthSecretName" $ }}
                   key: proxy-auth
             {{- include "toxindex.entitlementsEnv" (dict "root" $) | nindent 12 }}
           volumeMounts:

@@ -21,6 +21,7 @@ spec:
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 999 "gid" 999) | nindent 8 }}
         fsGroup: 999
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       containers:
         - name: postgres
           image: {{ include "toxindex.image" (dict "root" $ "name" "postgres") | quote }}

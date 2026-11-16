@@ -29,20 +29,12 @@ spec:
         - podSelector:
             matchLabels:
               {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 14 }}
-      ports:
-        - protocol: TCP
-          port: 8123
-    {{- if .Values.clickhouse.tailscale.expose }}
-    - from:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: tailscale
+              {{- include "kiln.selectorLabels" (dict "name" "kiln-fts-reader") | nindent 14 }}
       ports:
         - protocol: TCP
-          port: 9000
-        - protocol: TCP
           port: 8123
-    {{- end }}
   egress:
     - to:
         - namespaceSelector:
@@ -92,15 +84,6 @@ spec:
         - protocol: TCP
           port: 8080
     {{- end }}
-    {{- if .Values.remoteQuery.enabled }}
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 80
-    {{- end }}
     - to:
         - namespaceSelector:
             matchLabels:
@@ -142,15 +125,6 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.query.tailscale.expose }}
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 8080
-    {{- end }}
   egress:
     - to:
         - podSelector:
@@ -196,30 +170,12 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.sparql.tailscale.expose }}
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 8080
-    {{- end }}
   egress:
     {{- if .Values.clickhouse.enabled }}
     - to:
         - podSelector:
             matchLabels:
               {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 14 }}
-      ports:
-        - protocol: TCP
-          port: 8123
-    {{- end }}
-    {{- if .Values.remoteClickhouse.enabled }}
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
       ports:
         - protocol: TCP
           port: 8123
@@ -243,11 +199,11 @@ metadata:
   name: kiln-allow-fts-ingress
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+    {{- include "kiln.labels" (dict "name" "kiln-fts-reader" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 6 }}
+      {{- include "kiln.selectorLabels" (dict "name" "kiln-fts-reader") | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress
@@ -262,15 +218,6 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.fts.tailscale.expose }}
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 8080
-    {{- end }}
   egress:
     {{- if .Values.clickhouse.enabled }}
     - to:
@@ -281,18 +228,61 @@ spec:
         - protocol: TCP
           port: 8123
     {{- end }}
-    {{- if .Values.remoteClickhouse.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 8080
+    - ports:
+        - protocol: TCP
+          port: 443
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: tailscale
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kiln-allow-fts-builder-ingress
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "kiln.labels" (dict "name" "kiln-fts" "component" "network-policy" "release" $.Release.Name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "kiln.selectorLabels" (dict "name" "kiln-fts") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "kiln.selectorLabels" (dict "name" "kiln-fts-reader") | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- include "kiln.selectorLabels" (dict "name" "kiln-loader") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    {{- if .Values.clickhouse.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "kiln.selectorLabels" (dict "name" "kiln-clickhouse") | nindent 14 }}
       ports:
         - protocol: TCP
           port: 8123
     {{- end }}
-    - ports:
-        - protocol: TCP
-          port: 443
     - to:
         - namespaceSelector:
             matchLabels:

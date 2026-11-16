@@ -6,11 +6,6 @@ metadata:
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "kiln.labels" (dict "name" "kiln-query" "component" "database" "release" $.Release.Name) | nindent 4 }}
-  {{- if .Values.query.tailscale.expose }}
-  annotations:
-    tailscale.com/expose: "true"
-    tailscale.com/hostname: {{ .Values.query.tailscale.hostname }}
-  {{- end }}
 spec:
   selector:
     {{- include "kiln.selectorLabels" (dict "name" "kiln-query") | nindent 4 }}

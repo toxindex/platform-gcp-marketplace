@@ -4,6 +4,7 @@
 {{- $procs = append $procs "resource" -}}
 {{- end -}}
 {{- $procs = append $procs "batch" -}}
+{{- $isAudit := .Files.Get "files/audit-condition.txt" | trim -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -136,6 +137,16 @@ data:
       batch:
         send_batch_size: 1024
         timeout: 5s
+      filter/drop-audit:
+        error_mode: propagate
+        logs:
+          log_record:
+            - {{ $isAudit | squote }}
+      filter/keep-audit:
+        error_mode: propagate
+        logs:
+          log_record:
+            - {{ printf "not (%s)" $isAudit | squote }}
 
     exporters:
       {{- toYaml .Values.observability.exporters | nindent 6 }}
@@ -157,6 +168,10 @@ data:
           exporters: [{{ join ", " .Values.observability.pipelines.metrics }}]
         logs:
           receivers: [otlp, k8sobjects]
-          processors: [{{ join ", " $procs }}]
+          processors: [{{ join ", " (prepend (prepend (rest $procs) "filter/drop-audit") "memory_limiter") }}]
           exporters: [{{ join ", " .Values.observability.pipelines.logs }}]
+        logs/audit:
+          receivers: [otlp]
+          processors: [{{ join ", " (prepend (prepend (rest $procs) "filter/keep-audit") "memory_limiter") }}]
+          exporters: [{{ include "toxindex.auditExporters" (dict "root" .) }}]
 {{- end }}

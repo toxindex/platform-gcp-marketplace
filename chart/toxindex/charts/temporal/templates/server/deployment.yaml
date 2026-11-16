@@ -23,6 +23,7 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         {{- include "toxindex.podSecurityContext" (dict "uid" 1000 "gid" 1000) | nindent 8 }}
+      {{- include "toxindex.platformImagePullSecrets" $ | nindent 6 }}
       initContainers:
         - name: temporal-schema
           image: {{ include "toxindex.image" (dict "root" $ "name" "temporal-admin-tools") | quote }}
@@ -89,6 +90,12 @@ spec:
               value: {{ .Values.postgres.visibilityDatabase | quote }}
             - name: PROMETHEUS_ENDPOINT
               value: "0.0.0.0:{{ .Values.server.metricsPort }}"
+            - name: DYNAMIC_CONFIG_FILE_PATH
+              value: /etc/temporal/dynamicconfig/dynamicconfig.yaml
+          volumeMounts:
+            - name: dynamicconfig
+              mountPath: /etc/temporal/dynamicconfig
+              readOnly: true
           ports:
             - name: grpc
               containerPort: 7233
@@ -112,3 +119,7 @@ spec:
             failureThreshold: 3
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
+      volumes:
+        - name: dynamicconfig
+          configMap:
+            name: temporal-server

@@ -50,8 +50,8 @@ data:
                 <output_format_json_quote_64bit_integers>0</output_format_json_quote_64bit_integers>
                 <readonly>1</readonly>
                 <max_execution_time>600</max_execution_time>
-                <max_result_rows>2000000</max_result_rows>
-                <max_result_bytes>134217728</max_result_bytes>
+                <max_result_rows>20000000</max_result_rows>
+                <max_result_bytes>1073741824</max_result_bytes>
                 <result_overflow_mode>throw</result_overflow_mode>
                 {{- if $mem }}
                 <max_memory_usage>{{ mulf $limit 0.6 | int64 }}</max_memory_usage>
@@ -84,6 +84,7 @@ data:
                 <quota>default</quota>
                 <grants>
                     <query>GRANT SELECT ON default.*</query>
+                    <query>GRANT SELECT ON kiln_swap.*</query>
                     <query>GRANT SELECT ON system.tables</query>
                     <query>GRANT SELECT ON system.columns</query>
                 </grants>

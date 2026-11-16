@@ -20,9 +20,6 @@ engine:
       size: 20Gi
   serviceAccount:
     gcpServiceAccount:
-  tailscale:
-    expose: false
-    hostname: tidx-git-engine
   resources:
     requests:
       cpu: 50m

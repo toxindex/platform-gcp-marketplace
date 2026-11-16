@@ -103,6 +103,15 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    {{- if .Values.global.sysrev.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: sysrev
+      ports:
+        - protocol: TCP
+          port: 8080
+    {{- end }}
     - to:
         - podSelector:
             matchLabels:
@@ -110,20 +119,10 @@ spec:
       ports:
         - protocol: TCP
           port: 4317
-    {{- if .Values.remote.enabled }}
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 80
-        - protocol: TCP
-          port: 8080
-    {{- end }}
     - ports:
         - protocol: TCP
           port: 443
+    {{- include "toxindex.gcpMetadataEgress" . | nindent 4 }}
 {{- end }}
 {{- if .Values.controlPlane.enabled }}
 ---
@@ -154,6 +153,13 @@ spec:
     - ports:
         - protocol: TCP
           port: 8080
+    {{- end }}
+    {{- with .Values.controlPlane.adminFrom }}
+    - from:
+        {{- toYaml . | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: 8081
     {{- end }}
   egress:
     - to:
@@ -197,6 +203,8 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+        - protocol: TCP
+          port: 8081
     - to:
         - podSelector:
             matchLabels:
@@ -211,6 +219,17 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    {{- if .Values.global.sysrev.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: sysrev
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+    {{- end }}
     - to:
         - podSelector:
             matchLabels:
@@ -218,23 +237,11 @@ spec:
       ports:
         - protocol: TCP
           port: 4317
-    {{- if .Values.remote.enabled }}
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: tailscale
-      ports:
-        - protocol: TCP
-          port: 80
-        - protocol: TCP
-          port: 8080
-    {{- end }}
-    {{- if .Values.fileStore.bucket }}
+    {{- if or .Values.fileStore.bucket .Values.controlPlane.issueReportsUrl .Values.global.trustedWorkloads }}
     - ports:
         - protocol: TCP
           port: 443
-    {{- else }}
-    {{- include "toxindex.sentryEgress" (dict "root" $) | nindent 4 }}
+    {{- include "toxindex.gcpMetadataEgress" . | nindent 4 }}
     {{- end }}
 {{- end }}
 {{- end }}
